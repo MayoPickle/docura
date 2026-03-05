@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { Layout, Menu, Grid, Dropdown, Typography, theme, Tooltip } from "antd";
+import { Layout, Menu, Grid, Dropdown, Typography, Tooltip } from "antd";
 import {
   HomeOutlined,
   FileTextOutlined,
@@ -27,9 +27,8 @@ export default function AppLayout() {
   const location = useLocation();
   const screens = useBreakpoint();
   const [collapsed, setCollapsed] = useState(false);
-  const { token: t } = theme.useToken();
 
-  const isMobile = !screens.md;
+  const isMobile = !screens.lg;
 
   const selectedKey =
     NAV_ITEMS.find(
@@ -45,12 +44,12 @@ export default function AppLayout() {
       {
         key: "user",
         label: (
-          <div>
-            <div style={{ fontWeight: 600 }}>{user?.name}</div>
-            <div style={{ fontSize: 12, color: t.colorTextSecondary }}>
-              {user?.email}
+            <div>
+              <div style={{ fontWeight: 600 }}>{user?.name}</div>
+              <div style={{ fontSize: 12, color: "rgba(0,0,0,0.5)" }}>
+                {user?.email}
+              </div>
             </div>
-          </div>
         ),
         disabled: true,
         style: { cursor: "default", opacity: 1 },
@@ -71,46 +70,23 @@ export default function AppLayout() {
 
   if (isMobile) {
     return (
-      <Layout style={{ minHeight: "100vh" }}>
-        <Header
-          style={{
-            position: "sticky",
-            top: 0,
-            zIndex: 100,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "0 16px",
-            background: "rgba(255,255,255,0.88)",
-            backdropFilter: "blur(20px) saturate(180%)",
-            WebkitBackdropFilter: "blur(20px) saturate(180%)",
-            borderBottom: `1px solid rgba(0,0,0,0.06)`,
-            height: 56,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <Layout className="app-layout">
+        <Header className="mobile-header">
+          <div className="app-brand">
             <img
               src="/icon.png"
               alt=""
-              style={{ width: 30, height: 30, borderRadius: 8 }}
+              width={32}
+              height={32}
             />
-            <Text strong style={{ fontSize: 18, letterSpacing: -0.3 }}>
-              Docura
-            </Text>
+            <Text strong>Docura</Text>
           </div>
           <Dropdown menu={userMenu} trigger={["click"]} placement="bottomRight">
             <div className="user-avatar">{initials}</div>
           </Dropdown>
         </Header>
 
-        <Content
-          style={{
-            padding: 16,
-            paddingBottom: 80,
-            minHeight: "calc(100vh - 56px - 60px)",
-            background: t.colorBgLayout,
-          }}
-        >
+        <Content className="mobile-content">
           <div className="page-enter">
             <Outlet />
           </div>
@@ -122,12 +98,6 @@ export default function AppLayout() {
               key={item.key}
               className={`mobile-nav-item ${selectedKey === item.key ? "active" : ""}`}
               onClick={() => onNav(item.key)}
-              style={{
-                color:
-                  selectedKey === item.key
-                    ? t.colorPrimary
-                    : t.colorTextSecondary,
-              }}
             >
               <span className="nav-icon">{item.icon}</span>
               <span>{item.label}</span>
@@ -139,38 +109,19 @@ export default function AppLayout() {
   }
 
   return (
-    <Layout style={{ minHeight: "100vh" }}>
+    <Layout className="app-layout">
       <Sider
         collapsible
         collapsed={collapsed}
         onCollapse={setCollapsed}
         theme="light"
         width={240}
-        className="modern-sider"
-        style={{
-          borderRight: `1px solid rgba(0,0,0,0.04)`,
-          background: "#fff",
-        }}
+        className="modern-sider desktop-sider"
       >
         <div
-          style={{
-            height: 64,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: collapsed ? "center" : "flex-start",
-            gap: 10,
-            padding: collapsed ? 0 : "0 20px",
-            fontWeight: 700,
-            fontSize: collapsed ? 16 : 20,
-            letterSpacing: -0.3,
-            borderBottom: "1px solid rgba(0,0,0,0.04)",
-          }}
+          className={`sider-logo ${collapsed ? "sider-logo-collapsed" : ""}`}
         >
-          <img
-            src="/icon.png"
-            alt=""
-            style={{ width: 32, height: 32, borderRadius: 8 }}
-          />
+          <img src="/icon.png" alt="" width={34} height={34} />
           {!collapsed && "Docura"}
         </div>
 
@@ -190,19 +141,7 @@ export default function AppLayout() {
       </Sider>
 
       <Layout>
-        <Header
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "flex-end",
-            padding: "0 24px",
-            background: "rgba(255,255,255,0.72)",
-            backdropFilter: "blur(12px)",
-            WebkitBackdropFilter: "blur(12px)",
-            borderBottom: "1px solid rgba(0,0,0,0.04)",
-            height: 64,
-          }}
-        >
+        <Header className="desktop-header">
           <Dropdown menu={userMenu} trigger={["click"]} placement="bottomRight">
             <Tooltip title={user?.name}>
               <div className="user-avatar">{initials}</div>
@@ -210,13 +149,7 @@ export default function AppLayout() {
           </Dropdown>
         </Header>
 
-        <Content
-          style={{
-            padding: 28,
-            background: t.colorBgLayout,
-            minHeight: "calc(100vh - 64px)",
-          }}
-        >
+        <Content className="desktop-content">
           <div className="page-enter">
             <Outlet />
           </div>

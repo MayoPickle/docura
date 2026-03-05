@@ -52,7 +52,7 @@ export default function LoginPage() {
         <Card>
           <div className="auth-logo">
             <img src="/icon.png" alt="Docura" />
-            <Title level={2} style={{ marginBottom: 4 }}>
+            <Title className="page-title" level={2} style={{ marginBottom: 4 }}>
               Welcome back
             </Title>
             <Text type="secondary">Sign in to your Docura account</Text>
@@ -86,7 +86,7 @@ export default function LoginPage() {
                 Sign In
               </Button>
             </Form.Item>
-            <div style={{ textAlign: "center" }}>
+            <div className="auth-switch">
               <Text type="secondary">
                 Don't have an account?{" "}
                 <Link to="/register" style={{ fontWeight: 500 }}>

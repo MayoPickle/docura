@@ -60,29 +60,8 @@ export default function ScanResultReview({
 
   return (
     <div>
-      <div
-        style={{
-          marginBottom: 20,
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          flexWrap: "wrap",
-        }}
-      >
-        <div
-          style={{
-            padding: "4px 14px",
-            borderRadius: 999,
-            fontSize: 12,
-            fontWeight: 600,
-            background:
-              result.method === "openai"
-                ? "rgba(24,24,27,0.06)"
-                : "rgba(245,158,11,0.08)",
-            color:
-              result.method === "openai" ? "#18181b" : "#d97706",
-          }}
-        >
+      <div className="review-meta">
+        <div className="ai-badge">
           {result.method === "openai" ? "AI Vision" : "OCR"}
         </div>
         <div className={`confidence-badge confidence-${level}`}>
@@ -127,7 +106,7 @@ export default function ScanResultReview({
           <Input.TextArea rows={2} placeholder="Optional notes..." />
         </Form.Item>
 
-        <div style={{ display: "flex", gap: 12 }}>
+        <div className="review-actions">
           <Button type="primary" htmlType="submit" loading={saving} block>
             Save Document
           </Button>

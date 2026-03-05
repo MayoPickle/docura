@@ -63,7 +63,7 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div style={{ textAlign: "center", paddingTop: 80 }}>
+      <div className="empty-state">
         <Spin size="large" />
       </div>
     );
@@ -76,13 +76,13 @@ export default function DashboardPage() {
   const types = [...knownTypes, ...dynamicTypes];
 
   return (
-    <div className="content-container">
+    <div className="page-shell">
       <div className="hero-banner">
-        <div style={{ position: "relative", zIndex: 1 }}>
-          <Title level={3}>
+        <div className="hero-content">
+          <Title className="hero-title" level={3}>
             Hi, {user?.name || "there"}
           </Title>
-          <p style={{ fontSize: 15, margin: "4px 0 20px" }}>
+          <p className="hero-copy">
             You have <strong>{summary?.total || 0}</strong> documents stored
             securely.
           </p>
@@ -109,11 +109,7 @@ export default function DashboardPage() {
         <Title level={5} style={{ margin: 0 }}>
           By Category
         </Title>
-        <Button
-          type="link"
-          onClick={() => navigate("/documents")}
-          style={{ fontWeight: 500, padding: 0 }}
-        >
+        <Button type="link" onClick={() => navigate("/documents")}>
           View all <RightOutlined style={{ fontSize: 11 }} />
         </Button>
       </div>
@@ -124,16 +120,10 @@ export default function DashboardPage() {
             <div
               className="stat-card"
               onClick={() => navigate(`/documents?type=${t}`)}
-              style={{
-                background: "#fff",
-                borderRadius: 16,
-                padding: 20,
-                cursor: "pointer",
-              }}
             >
               <div
                 className="stat-card-icon"
-                style={{ background: GRADIENT_MAP[t] || GRADIENT_MAP.other, marginBottom: 14 }}
+                style={{ background: GRADIENT_MAP[t] || GRADIENT_MAP.other }}
               >
                 {ICON_MAP[t] || ICON_MAP.other}
               </div>

@@ -112,14 +112,14 @@ export default function DocumentFormPage() {
 
   if (loading) {
     return (
-      <div style={{ textAlign: "center", paddingTop: 80 }}>
+      <div className="empty-state">
         <Spin size="large" />
       </div>
     );
   }
 
   return (
-    <div style={{ maxWidth: 620, margin: "0 auto" }}>
+    <div className="page-shell page-shell-narrow">
       <Button
         type="text"
         icon={<ArrowLeftOutlined />}
@@ -130,10 +130,10 @@ export default function DocumentFormPage() {
       </Button>
 
       <Card className="detail-card">
-        <Title level={4} style={{ marginBottom: 4 }}>
+        <Title className="page-title" level={4} style={{ marginBottom: 4 }}>
           {isEdit ? "Edit Document" : "New Document"}
         </Title>
-        <Text type="secondary" style={{ display: "block", marginBottom: 24 }}>
+        <Text className="form-intro" type="secondary" style={{ display: "block" }}>
           {isEdit
             ? "Update the document information below."
             : "Fill in the details to create a new document."}

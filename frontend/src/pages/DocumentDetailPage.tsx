@@ -127,25 +127,36 @@ export default function DocumentDetailPage() {
         message.success("File uploaded");
         fetchDoc();
       } else if (info.file.status === "error") {
-        message.error("Upload failed");
+        const detail = (info.file.response as any)?.detail;
+        const statusCode = (info.file.error as any)?.status || (info.file.xhr as any)?.status;
+        const isDuplicate =
+          statusCode === 409 || (typeof detail === "object" && detail?.code === "DUPLICATE_FILE");
+        if (isDuplicate) {
+          message.warning(`"${info.file.name}" already exists in your documents.`);
+          return;
+        }
+
+        const detailMessage =
+          typeof detail === "string"
+            ? detail
+            : typeof detail?.message === "string"
+              ? detail.message
+              : "";
+        message.error(detailMessage || "Upload failed");
       }
     },
   };
 
   if (loading) {
     return (
-      <div style={{ textAlign: "center", paddingTop: 80 }}>
+      <div className="empty-state">
         <Spin size="large" />
       </div>
     );
   }
 
   if (!doc) {
-    return (
-      <div style={{ textAlign: "center", paddingTop: 80 }}>
-        Document not found
-      </div>
-    );
+    return <div className="empty-state">Document not found</div>;
   }
 
   let fields: Record<string, string> = {};
@@ -177,7 +188,7 @@ export default function DocumentDetailPage() {
   );
 
   return (
-    <div className="content-container doc-detail-page">
+    <div className="page-shell page-shell-wide">
       <Button
         type="text"
         icon={<ArrowLeftOutlined />}
@@ -194,10 +205,7 @@ export default function DocumentDetailPage() {
             <Title level={4} className="detail-title">
               {doc.title}
             </Title>
-            <Tag
-              className="doc-type-tag"
-              style={{ borderRadius: 999, fontWeight: 500, fontSize: 12 }}
-            >
+            <Tag className="doc-type-tag">
               <span className="doc-type-tag-icon">
                 {DOC_TYPE_ICON_MAP[doc.doc_type] || <FileOutlined />}
               </span>
@@ -206,7 +214,7 @@ export default function DocumentDetailPage() {
           </div>
         }
         extra={
-          <Space>
+          <Space wrap>
             <Button
               icon={<EditOutlined />}
               onClick={() => navigate(`/documents/${id}/edit`)}
@@ -238,7 +246,7 @@ export default function DocumentDetailPage() {
               type="secondary"
               style={{
                 fontSize: 12,
-                fontWeight: 500,
+                fontWeight: 600,
                 display: "block",
                 marginBottom: 4,
               }}
@@ -261,49 +269,32 @@ export default function DocumentDetailPage() {
         </div>
       </Card>
 
-      <Card
-        className="detail-card"
-        title={
-          <span style={{ fontWeight: 600 }}>
-            <PaperClipOutlined style={{ marginRight: 8 }} />
+      <Card className="detail-card">
+        <div className="attachment-header">
+          <span style={{ fontWeight: 700 }}>
+            <PaperClipOutlined className="card-title-icon" />
             Attachments ({doc.files.length})
           </span>
-        }
-        extra={
           <Upload {...uploadProps}>
             <Button icon={<UploadOutlined />} type="primary" ghost>
               Upload
             </Button>
           </Upload>
-        }
-      >
+        </div>
+
         {doc.files.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "24px 0" }}>
+          <div className="attachment-empty">
             <Text type="secondary">No attachments yet</Text>
           </div>
         ) : (
           <>
             {imageFiles.length > 0 && (
-              <div style={{ marginBottom: otherFiles.length > 0 ? 16 : 0 }}>
+              <div style={{ marginBottom: pdfFiles.length > 0 || otherFiles.length > 0 ? 12 : 0 }}>
                 <Image.PreviewGroup>
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns:
-                        "repeat(auto-fill, minmax(140px, 1fr))",
-                      gap: 10,
-                    }}
-                  >
+                  <div className="image-grid">
                     {imageFiles.map((file) => (
-                      <div key={file.id} style={{ position: "relative" }}>
-                        <div
-                          style={{
-                            borderRadius: 10,
-                            overflow: "hidden",
-                            border: "1px solid rgba(0,0,0,0.06)",
-                            background: "#fafafa",
-                          }}
-                        >
+                      <div key={file.id} className="image-file-card">
+                        <div className="image-file-thumb">
                           <Image
                             src={fileUrl(file.id)}
                             alt={file.filename}
@@ -329,22 +320,12 @@ export default function DocumentDetailPage() {
                             }}
                           />
                         </div>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            marginTop: 6,
-                            padding: "0 2px",
-                          }}
-                        >
-                          <Text
-                            ellipsis
-                            style={{ fontSize: 12, flex: 1, minWidth: 0 }}
-                          >
+
+                        <div className="image-file-meta">
+                          <Text ellipsis style={{ fontSize: 12, flex: 1, minWidth: 0 }}>
                             {file.filename}
                           </Text>
-                          <div style={{ display: "flex", gap: 2, flexShrink: 0 }}>
+                          <div className="image-file-actions">
                             <Button
                               type="text"
                               size="small"
@@ -378,44 +359,77 @@ export default function DocumentDetailPage() {
               <div style={{ marginBottom: otherFiles.length > 0 ? 12 : 0 }}>
                 <Text
                   type="secondary"
-                  style={{ display: "block", marginBottom: 8, fontSize: 12, fontWeight: 600 }}
+                  style={{ display: "block", marginBottom: 8, fontSize: 12, fontWeight: 700 }}
                 >
                   PDF Preview
                 </Text>
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <div className="pdf-list">
                   {pdfFiles.map((file) => (
-                    <div
-                      key={file.id}
-                      style={{
-                        border: "1px solid rgba(0,0,0,0.08)",
-                        borderRadius: 12,
-                        overflow: "hidden",
-                        background: "#fff",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 10,
-                          padding: "10px 12px",
-                          borderBottom: "1px solid rgba(0,0,0,0.06)",
-                          background: "#fafafa",
-                        }}
-                      >
-                        <FilePdfOutlined style={{ fontSize: 18, color: "#d92d20" }} />
-                        <Text ellipsis style={{ flex: 1, fontWeight: 500 }}>
+                    <div key={file.id} className="pdf-item">
+                      <div className="pdf-item-head">
+                        <FilePdfOutlined style={{ fontSize: 18, color: "#b42318" }} />
+                        <Text ellipsis style={{ fontWeight: 600 }}>
                           {file.filename}
                         </Text>
-                        <Button
-                          type="link"
-                          size="small"
-                          icon={<EyeOutlined />}
-                          href={fileUrl(file.id)}
-                          target="_blank"
-                        >
-                          Open
-                        </Button>
+                        <div className="pdf-item-actions">
+                          <Button
+                            type="link"
+                            size="small"
+                            icon={<EyeOutlined />}
+                            href={fileUrl(file.id)}
+                            target="_blank"
+                          >
+                            Open
+                          </Button>
+                          <Button
+                            type="link"
+                            size="small"
+                            icon={<DownloadOutlined />}
+                            href={fileUrl(file.id, true)}
+                            target="_blank"
+                          >
+                            Download
+                          </Button>
+                          <Popconfirm
+                            title="Delete this file?"
+                            onConfirm={() => handleDeleteFile(file.id)}
+                          >
+                            <Button
+                              type="link"
+                              size="small"
+                              danger
+                              icon={<DeleteOutlined />}
+                            >
+                              Delete
+                            </Button>
+                          </Popconfirm>
+                        </div>
+                      </div>
+                      <iframe
+                        title={`PDF Preview - ${file.filename}`}
+                        src={fileUrl(file.id)}
+                        className="pdf-preview"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {otherFiles.length > 0 && (
+              <div className="generic-file-list">
+                {otherFiles.map((file) => (
+                  <div key={file.id} className="generic-file-row">
+                    <div className="generic-file-head">
+                      {isImage(file.content_type) ? (
+                        <FileImageOutlined style={{ fontSize: 18, color: "rgba(0,0,0,0.35)" }} />
+                      ) : (
+                        <FileOutlined style={{ fontSize: 18, color: "rgba(0,0,0,0.35)" }} />
+                      )}
+                      <Text ellipsis style={{ fontWeight: 600 }}>
+                        {file.filename}
+                      </Text>
+                      <div className="generic-file-actions">
                         <Button
                           type="link"
                           size="small"
@@ -439,78 +453,7 @@ export default function DocumentDetailPage() {
                           </Button>
                         </Popconfirm>
                       </div>
-                      <iframe
-                        title={`PDF Preview - ${file.filename}`}
-                        src={fileUrl(file.id)}
-                        style={{
-                          width: "100%",
-                          height: 460,
-                          border: "none",
-                          display: "block",
-                          background: "#fff",
-                        }}
-                      />
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {otherFiles.length > 0 && (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 8,
-                }}
-              >
-                {otherFiles.map((file) => (
-                  <div
-                    key={file.id}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10,
-                      padding: "10px 12px",
-                      borderRadius: 10,
-                      border: "1px solid rgba(0,0,0,0.06)",
-                      background: "#fafafa",
-                    }}
-                  >
-                    {isImage(file.content_type) ? (
-                      <FileImageOutlined
-                        style={{ fontSize: 18, color: "rgba(0,0,0,0.3)" }}
-                      />
-                    ) : (
-                      <FileOutlined
-                        style={{ fontSize: 18, color: "rgba(0,0,0,0.3)" }}
-                      />
-                    )}
-                    <Text ellipsis style={{ flex: 1, fontWeight: 500 }}>
-                      {file.filename}
-                    </Text>
-                    <Button
-                      type="link"
-                      size="small"
-                      icon={<DownloadOutlined />}
-                      href={fileUrl(file.id, true)}
-                      target="_blank"
-                    >
-                      Download
-                    </Button>
-                    <Popconfirm
-                      title="Delete this file?"
-                      onConfirm={() => handleDeleteFile(file.id)}
-                    >
-                      <Button
-                        type="link"
-                        size="small"
-                        danger
-                        icon={<DeleteOutlined />}
-                      >
-                        Delete
-                      </Button>
-                    </Popconfirm>
                   </div>
                 ))}
               </div>

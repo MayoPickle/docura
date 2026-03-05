@@ -61,29 +61,19 @@ interface Props {
 
 export default function DocumentCard({ doc, onClick }: Props) {
   return (
-    <div className="doc-card" onClick={onClick} style={{ background: "#fff", padding: 20, cursor: "pointer" }}>
-      <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+    <div className="doc-card" onClick={onClick}>
+      <div className="doc-card-head">
         <div
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 10,
-            background: BG_MAP[doc.doc_type] || BG_MAP.other,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#fff",
-            fontSize: 18,
-            flexShrink: 0,
-          }}
+          className="doc-card-icon"
+          style={{ background: BG_MAP[doc.doc_type] || BG_MAP.other }}
         >
           {ICON_MAP[doc.doc_type]}
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <Text strong ellipsis style={{ fontSize: 15, display: "block", marginBottom: 6 }}>
+        <div className="doc-card-content">
+          <Text className="doc-card-title" strong ellipsis>
             {doc.title}
           </Text>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <div className="doc-card-meta">
             <Tag
               color={COLOR_MAP[doc.doc_type] || "default"}
               style={{ borderRadius: 999, margin: 0, fontSize: 11 }}
@@ -91,11 +81,11 @@ export default function DocumentCard({ doc, onClick }: Props) {
               {getDocTypeLabel(doc.doc_type)}
             </Tag>
             {doc.file_count > 0 && (
-              <Text type="secondary" style={{ fontSize: 12 }}>
+              <Text className="doc-meta-item" type="secondary">
                 <PaperClipOutlined /> {doc.file_count}
               </Text>
             )}
-            <Text type="secondary" style={{ fontSize: 12 }}>
+            <Text className="doc-meta-item" type="secondary">
               <ClockCircleOutlined style={{ marginRight: 3 }} />
               {dayjs(doc.updated_at).format("MMM D, YYYY")}
             </Text>

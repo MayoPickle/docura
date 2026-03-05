@@ -49,7 +49,7 @@ export default function RegisterPage() {
         <Card>
           <div className="auth-logo">
             <img src="/icon.png" alt="Docura" />
-            <Title level={2} style={{ marginBottom: 4 }}>
+            <Title className="page-title" level={2} style={{ marginBottom: 4 }}>
               Create account
             </Title>
             <Text type="secondary">
@@ -117,7 +117,7 @@ export default function RegisterPage() {
                 Create Account
               </Button>
             </Form.Item>
-            <div style={{ textAlign: "center" }}>
+            <div className="auth-switch">
               <Text type="secondary">
                 Already have an account?{" "}
                 <Link to="/login" style={{ fontWeight: 500 }}>

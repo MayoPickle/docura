@@ -112,9 +112,9 @@ export default function DocumentTypesPage() {
   );
 
   return (
-    <div className="content-container">
+    <div className="page-shell">
       <Card className="detail-card">
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+        <div className="types-intro">
           <TagsOutlined style={{ fontSize: 20 }} />
           <Title level={4} style={{ margin: 0 }}>
             Manage Document Types
@@ -125,6 +125,7 @@ export default function DocumentTypesPage() {
         </Text>
 
         <Table
+          className="types-table"
           rowKey="doc_type"
           columns={columns}
           dataSource={rows}

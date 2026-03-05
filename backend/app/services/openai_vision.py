@@ -1,5 +1,6 @@
 import base64
 import json
+import mimetypes
 import os
 import re
 
@@ -48,6 +49,41 @@ Only include fields you can confidently read from the document. Leave unreadable
 def _data_url(file_bytes: bytes, content_type: str) -> str:
     b64_data = base64.b64encode(file_bytes).decode("utf-8")
     return f"data:{content_type};base64,{b64_data}"
+
+
+def _normalize_content_type(content_type: str, filename: str | None = None) -> str:
+    normalized = (content_type or "").split(";", 1)[0].strip().lower()
+    if normalized and normalized != "application/octet-stream":
+        return normalized
+
+    guessed, _ = mimetypes.guess_type(filename or "")
+    if guessed:
+        return guessed.lower()
+    return normalized or "application/octet-stream"
+
+
+def _build_content_item(
+    file_bytes: bytes,
+    content_type: str,
+    filename: str | None,
+    index: int,
+) -> dict[str, str]:
+    resolved_name = filename or f"document_{index}"
+    normalized_type = _normalize_content_type(content_type, resolved_name)
+    data_url = _data_url(file_bytes, normalized_type)
+
+    if normalized_type.startswith("image/"):
+        # Responses API expects images as input_image instead of input_file.
+        return {
+            "type": "input_image",
+            "image_url": data_url,
+        }
+
+    return {
+        "type": "input_file",
+        "filename": resolved_name,
+        "file_data": data_url,
+    }
 
 
 def _extract_response_text(response) -> str:
@@ -146,13 +182,13 @@ async def recognize_with_openai_files(
         {"type": "input_text", "text": " ".join(user_text)},
     ]
     for idx, (file_bytes, content_type, filename) in enumerate(files, start=1):
-        resolved_name = filename or f"document_{idx}"
         user_content.append(
-            {
-                "type": "input_file",
-                "filename": resolved_name,
-                "file_data": _data_url(file_bytes, content_type),
-            }
+            _build_content_item(
+                file_bytes=file_bytes,
+                content_type=content_type,
+                filename=filename,
+                index=idx,
+            )
         )
 
     response = await client.responses.create(

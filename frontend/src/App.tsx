@@ -17,38 +17,39 @@ export default function App() {
     <ConfigProvider
       theme={{
         token: {
-          colorPrimary: "#18181b",
-          colorInfo: "#18181b",
-          borderRadius: 10,
+          colorPrimary: "#0f766e",
+          colorInfo: "#0f766e",
+          borderRadius: 12,
           fontFamily:
-            'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-          colorBgLayout: "#fafafa",
-          controlHeight: 40,
+            '"Manrope", "Plus Jakarta Sans", "Avenir Next", "Segoe UI", sans-serif',
+          colorBgLayout: "transparent",
+          colorTextBase: "#1b1f24",
+          controlHeight: 42,
         },
         components: {
           Button: {
-            primaryShadow: "0 2px 8px rgba(0, 0, 0, 0.12)",
-            borderRadius: 10,
-            controlHeight: 40,
-            fontWeight: 500,
+            primaryShadow: "0 8px 18px rgba(15, 118, 110, 0.28)",
+            borderRadius: 12,
+            controlHeight: 42,
+            fontWeight: 700,
           },
           Card: {
-            borderRadiusLG: 16,
+            borderRadiusLG: 18,
           },
           Input: {
-            borderRadius: 10,
+            borderRadius: 12,
             controlHeight: 42,
           },
           Select: {
-            borderRadius: 10,
+            borderRadius: 12,
             controlHeight: 42,
           },
           Menu: {
-            itemBorderRadius: 8,
+            itemBorderRadius: 10,
             itemMarginInline: 8,
-            itemSelectedBg: "rgba(0, 0, 0, 0.04)",
-            itemSelectedColor: "#18181b",
-            itemHoverBg: "rgba(0, 0, 0, 0.03)",
+            itemSelectedBg: "rgba(15, 118, 110, 0.12)",
+            itemSelectedColor: "#115e59",
+            itemHoverBg: "rgba(15, 118, 110, 0.07)",
           },
         },
       }}

@@ -107,3 +107,14 @@ class ScanResult(BaseModel):
     fields: dict
     confidence: float
     method: str  # "openai" or "tesseract"
+
+
+class ScanDuplicateItem(BaseModel):
+    filename: str
+    existing_file_id: int
+    existing_document_id: int
+    existing_filename: str
+
+
+class ScanDuplicateCheckResponse(BaseModel):
+    duplicates: list[ScanDuplicateItem]

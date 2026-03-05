@@ -19,6 +19,13 @@ const { Title, Text } = Typography;
 
 const MAX_SCAN_FILES = 10;
 
+type ScanDuplicateItem = {
+  filename: string;
+  existing_file_id: number;
+  existing_document_id: number;
+  existing_filename: string;
+};
+
 function isImageFile(file: File) {
   return file.type.startsWith("image/");
 }
@@ -63,7 +70,7 @@ function formatFileType(file: File) {
 
 export default function SmartScanPage() {
   const navigate = useNavigate();
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const [scanning, setScanning] = useState(false);
@@ -121,13 +128,69 @@ export default function SmartScanPage() {
     }
 
     setScanResult(null);
-    setScanning(true);
+    const buildScanFormData = () => {
+      const formData = new FormData();
+      scanFiles.forEach((file) => formData.append("files", file));
+      return formData;
+    };
 
-    const formData = new FormData();
-    scanFiles.forEach((file) => formData.append("files", file));
+    const confirmContinue = (duplicates: ScanDuplicateItem[]) =>
+      new Promise<boolean>((resolve) => {
+        const duplicateNames = Array.from(new Set(duplicates.map((item) => item.filename)));
+        modal.confirm({
+          title: "Duplicate file detected",
+          okText: "Continue scan",
+          cancelText: "Cancel",
+          content: (
+            <div>
+              <Text type="secondary" style={{ display: "block", marginBottom: 8 }}>
+                These files already exist in your documents:
+              </Text>
+              {duplicateNames.slice(0, 5).map((name) => (
+                <Text key={name} style={{ display: "block" }}>
+                  - {name}
+                </Text>
+              ))}
+              {duplicateNames.length > 5 && (
+                <Text type="secondary" style={{ display: "block", marginTop: 4 }}>
+                  And {duplicateNames.length - 5} more.
+                </Text>
+              )}
+              <Text style={{ display: "block", marginTop: 8 }}>Continue scanning anyway?</Text>
+            </div>
+          ),
+          onOk: () => resolve(true),
+          onCancel: () => resolve(false),
+        });
+      });
 
     try {
-      const res = await api.post("/documents/scan", formData, {
+      const duplicateRes = await api.post("/documents/scan/duplicates", buildScanFormData(), {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const duplicates = (duplicateRes.data?.duplicates || []) as ScanDuplicateItem[];
+      if (duplicates.length > 0) {
+        const shouldContinue = await confirmContinue(duplicates);
+        if (!shouldContinue) {
+          message.info("Scan canceled.");
+          return;
+        }
+      }
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail;
+      const detailMessage =
+        typeof detail === "string"
+          ? detail
+          : typeof detail?.message === "string"
+            ? detail.message
+            : "";
+      message.error(detailMessage || "Failed to validate files before scanning.");
+      return;
+    }
+
+    setScanning(true);
+    try {
+      const res = await api.post("/documents/scan", buildScanFormData(), {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setScanResult(res.data);
@@ -155,11 +218,10 @@ export default function SmartScanPage() {
       for (const file of scanFiles) {
         const formData = new FormData();
         formData.append("file", file);
-        await api.post(`/documents/${docId}/files`, formData, {
+        await api.post(`/documents/${docId}/files?allow_duplicate=1`, formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
       }
-
       message.success("Document saved successfully!");
       navigate(`/documents/${docId}`);
     } catch {
@@ -194,7 +256,7 @@ export default function SmartScanPage() {
   };
 
   return (
-    <div style={{ maxWidth: 620, margin: "0 auto" }}>
+    <div className="page-shell page-shell-narrow">
       <Button
         type="text"
         icon={<ArrowLeftOutlined />}
@@ -204,16 +266,15 @@ export default function SmartScanPage() {
         Back
       </Button>
 
-      <Title level={3} style={{ marginBottom: 4 }}>
-        Smart Scan
-      </Title>
-      <Text
-        type="secondary"
-        style={{ display: "block", marginBottom: 24, fontSize: 15 }}
-      >
-        Upload image, PDF, or text files. AI will combine pages/files and extract
-        key information automatically.
-      </Text>
+      <div>
+        <Title className="page-title" level={3} style={{ marginBottom: 4 }}>
+          Smart Scan
+        </Title>
+        <Text className="page-subtitle" type="secondary">
+          Upload image, PDF, or text files. AI will combine pages/files and extract
+          key information automatically.
+        </Text>
+      </div>
 
       {!scanResult && (
         <div className="scan-dropzone">
@@ -223,17 +284,11 @@ export default function SmartScanPage() {
           <Title level={5} style={{ margin: "0 0 6px" }}>
             Add document files
           </Title>
-          <Text type="secondary" style={{ display: "block", marginBottom: 20 }}>
+          <Text type="secondary" style={{ display: "block", marginBottom: 16 }}>
             Supported: images, PDF, text. Up to {MAX_SCAN_FILES} files.
           </Text>
-          <div
-            style={{
-              display: "flex",
-              gap: 12,
-              justifyContent: "center",
-              flexWrap: "wrap",
-            }}
-          >
+
+          <div className="scan-upload-actions">
             <Upload
               accept="image/*,application/pdf,text/plain,.pdf,.txt"
               multiple
@@ -273,15 +328,8 @@ export default function SmartScanPage() {
       )}
 
       {scanFiles.length > 0 && (
-        <Card className="detail-card" style={{ marginBottom: 16 }} styles={{ body: { padding: 12 } }}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 10,
-            }}
-          >
+        <Card className="detail-card" styles={{ body: { padding: 12 } }}>
+          <div className="attachment-header">
             <Text strong>
               Selected files: {scanFiles.length}/{MAX_SCAN_FILES}
             </Text>
@@ -291,28 +339,15 @@ export default function SmartScanPage() {
               </Button>
             )}
           </div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))",
-              gap: 10,
-            }}
-          >
+
+          <div className="scan-file-grid">
             {scanFiles.map((file, index) => {
               const previewUrl = previewUrls[index];
               const isImage = isImageFile(file);
               const isPdf = isPdfFile(file);
               return (
-                <div
-                  key={`${file.name}-${file.size}-${index}`}
-                  style={{
-                    border: "1px solid rgba(0,0,0,0.08)",
-                    borderRadius: 10,
-                    overflow: "hidden",
-                    background: "#fff",
-                  }}
-                >
-                  <div style={{ height: 160, background: "#f7f7f7", position: "relative" }}>
+                <div key={`${file.name}-${file.size}-${index}`} className="scan-file-card">
+                  <div className="scan-file-thumb">
                     {isImage && previewUrl ? (
                       <Image
                         src={previewUrl}
@@ -323,12 +358,7 @@ export default function SmartScanPage() {
                       <iframe
                         title={`PDF preview ${file.name}`}
                         src={`${previewUrl}#toolbar=0&navpanes=0`}
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          border: "none",
-                          background: "#fff",
-                        }}
+                        style={{ width: "100%", height: "100%", border: "none", background: "#fff" }}
                       />
                     ) : (
                       <div
@@ -344,6 +374,7 @@ export default function SmartScanPage() {
                         {formatFileType(file) === "PDF" ? <FilePdfOutlined /> : <FileTextOutlined />}
                       </div>
                     )}
+
                     {!scanResult && (
                       <Button
                         type="primary"
@@ -351,28 +382,16 @@ export default function SmartScanPage() {
                         size="small"
                         icon={<DeleteOutlined />}
                         onClick={() => removeFile(index)}
-                        style={{
-                          position: "absolute",
-                          top: 6,
-                          right: 6,
-                          borderRadius: 999,
-                        }}
+                        style={{ position: "absolute", top: 6, right: 6, borderRadius: 999 }}
                       />
                     )}
                   </div>
-                  <div style={{ padding: "8px 10px" }}>
+
+                  <div className="scan-file-body">
                     <Text ellipsis style={{ display: "block", fontSize: 12 }}>
                       {file.name}
                     </Text>
-                    <div
-                      style={{
-                        marginTop: 4,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: 8,
-                      }}
-                    >
+                    <div className="scan-file-row">
                       <Text type="secondary" style={{ fontSize: 11 }}>
                         {formatFileType(file)}
                       </Text>
@@ -395,7 +414,7 @@ export default function SmartScanPage() {
       )}
 
       {!scanResult && !scanning && scanFiles.length > 0 && (
-        <Card className="detail-card" style={{ marginBottom: 16 }}>
+        <Card className="detail-card">
           <Button type="primary" icon={<ScanOutlined />} onClick={handleScan} block>
             Start Smart Scan
           </Button>
@@ -463,13 +482,7 @@ export default function SmartScanPage() {
           <iframe
             title={`Preview - ${activePreview.name}`}
             src={activePreview.url}
-            style={{
-              width: "100%",
-              height: "80vh",
-              border: "none",
-              display: "block",
-              background: "#fff",
-            }}
+            style={{ width: "100%", height: "80vh", border: "none", display: "block", background: "#fff" }}
           />
         )}
       </Modal>

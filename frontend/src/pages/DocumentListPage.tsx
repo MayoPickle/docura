@@ -53,12 +53,15 @@ export default function DocumentListPage() {
   }, [docs]);
 
   return (
-    <div className="content-container">
-      <div className="section-header">
-        <Title level={3} style={{ margin: 0 }}>
-          Documents
-        </Title>
-        <div style={{ display: "flex", gap: 8 }}>
+    <div className="page-shell">
+      <div className="page-header">
+        <div>
+          <Title className="page-title" level={3}>
+            Documents
+          </Title>
+          <p className="page-subtitle">Search, filter, and manage all uploaded files.</p>
+        </div>
+        <div className="page-actions">
           <Button onClick={() => navigate("/types")}>Manage Types</Button>
           <Button
             type="primary"
@@ -71,12 +74,12 @@ export default function DocumentListPage() {
       </div>
 
       <Input
+        className="doc-search"
         prefix={<SearchOutlined style={{ color: "rgba(0,0,0,0.25)" }} />}
         placeholder="Search documents..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         allowClear
-        style={{ marginBottom: 16, borderRadius: 999, height: 42 }}
       />
 
       <div className="filter-bar">
@@ -98,7 +101,7 @@ export default function DocumentListPage() {
       </div>
 
       {loading ? (
-        <div style={{ textAlign: "center", paddingTop: 60 }}>
+        <div className="empty-state">
           <Spin size="large" />
         </div>
       ) : filtered.length === 0 ? (
