@@ -1,13 +1,16 @@
 import base64
 import json
 import os
+import re
 
 from openai import AsyncOpenAI
 from ..schemas import ScanResult
 
-SYSTEM_PROMPT = """You are a document recognition assistant. Analyze the uploaded image and:
+SYSTEM_PROMPT = """You are a document recognition assistant. Analyze the uploaded document file(s) and:
 
-1. Identify the document type. Must be one of: credit_card, passport, visa, diploma, id_card, driver_license, other
+1. Identify the document type:
+   - If it matches one of these known types, use it exactly: credit_card, passport, visa, diploma, id_card, driver_license, i20, i797
+   - Otherwise create a new category in short lower_snake_case (example: lca, i983, medical_history)
 2. Extract all relevant fields based on the document type.
 3. Suggest a short title for this document.
 4. Provide a confidence score from 0.0 to 1.0.
@@ -27,37 +30,45 @@ Field schemas by document type:
 - diploma: {"institution": "", "degree": "", "major": "", "full_name": "", "graduation_date": ""}
 - id_card: {"id_number": "", "full_name": "", "date_of_birth": "", "sex": "", "address": "", "issue_date": "", "expiry_date": ""}
 - driver_license: {"license_number": "", "full_name": "", "date_of_birth": "", "address": "", "class": "", "issue_date": "", "expiry_date": ""}
-- other: {"description": ""}
+- i20: {"sevis_id": "", "school_name": "", "full_name": "", "program": "", "start_date": "", "end_date": ""}
+- i797: {"receipt_number": "", "notice_type": "", "petitioner": "", "beneficiary": "", "received_date": "", "notice_date": "", "start_date": "", "end_date": "", "class_requested": ""}
+- other or custom category: return a practical fields object with key-value pairs (not only description)
+
+For long forms (for example LCA ETA-9035), return the most important 20-40 fields instead of every box on the form.
+Prefer core identifiers, parties, dates, status, role/title, and location/wage facts.
+
+For i797 dates:
+- received_date can come from labels like "Received Date" / "Date Received".
+- start_date can come from "Valid From" / "Validity Start Date".
+- end_date can come from "Valid To" / "Until" / "Validity End Date" / "Expiration".
 
 Only include fields you can confidently read from the document. Leave unreadable fields as empty strings."""
 
 
-async def recognize_with_openai(image_bytes: bytes, content_type: str, api_key: str) -> ScanResult:
-    client = AsyncOpenAI(api_key=api_key)
-    model = os.getenv("OPENAI_MODEL", "gpt-4o")
+def _data_url(file_bytes: bytes, content_type: str) -> str:
+    b64_data = base64.b64encode(file_bytes).decode("utf-8")
+    return f"data:{content_type};base64,{b64_data}"
 
-    b64_image = base64.b64encode(image_bytes).decode("utf-8")
 
-    response = await client.chat.completions.create(
-        model=model,
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": "Please analyze this document image and extract the information."},
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:{content_type};base64,{b64_image}"},
-                    },
-                ],
-            },
-        ],
-        max_tokens=1000,
-        temperature=0.1,
-    )
+def _extract_response_text(response) -> str:
+    output_text = getattr(response, "output_text", None)
+    if output_text:
+        return output_text
 
-    raw = response.choices[0].message.content or "{}"
+    chunks: list[str] = []
+    for item in getattr(response, "output", []) or []:
+        if getattr(item, "type", "") != "message":
+            continue
+        for content in getattr(item, "content", []) or []:
+            if getattr(content, "type", "") == "output_text":
+                text = getattr(content, "text", "")
+                if text:
+                    chunks.append(text)
+
+    return "\n".join(chunks) if chunks else "{}"
+
+
+def _parse_result(raw: str) -> ScanResult:
     raw = raw.strip()
     if raw.startswith("```"):
         raw = raw.split("\n", 1)[1] if "\n" in raw else raw[3:]
@@ -68,6 +79,19 @@ async def recognize_with_openai(image_bytes: bytes, content_type: str, api_key: 
     try:
         data = json.loads(raw)
     except json.JSONDecodeError:
+        # Best-effort recovery when model wraps JSON with extra text.
+        start = raw.find("{")
+        end = raw.rfind("}")
+        if start != -1 and end != -1 and end > start:
+            candidate = raw[start:end + 1]
+            try:
+                data = json.loads(candidate)
+            except json.JSONDecodeError:
+                data = None
+        else:
+            data = None
+
+    if data is None:
         return ScanResult(
             doc_type="other",
             title="Unrecognized Document",
@@ -76,10 +100,77 @@ async def recognize_with_openai(image_bytes: bytes, content_type: str, api_key: 
             method="openai",
         )
 
+    doc_type_raw = data.get("doc_type", "other")
+    normalized_doc_type = re.sub(r"[^a-z0-9]+", "_", str(doc_type_raw).lower()).strip("_") or "other"
+    fields = data.get("fields", {})
+    if not isinstance(fields, dict):
+        fields = {"raw_text": str(fields)}
+    normalized_fields: dict[str, str] = {}
+    for key, value in fields.items():
+        field_key = re.sub(r"[^a-z0-9]+", "_", str(key).lower()).strip("_") or str(key)
+        if isinstance(value, str):
+            normalized_fields[field_key] = value
+        elif value is None:
+            normalized_fields[field_key] = ""
+        else:
+            normalized_fields[field_key] = str(value)
+
     return ScanResult(
-        doc_type=data.get("doc_type", "other"),
+        doc_type=normalized_doc_type,
         title=data.get("title", "Untitled Document"),
-        fields=data.get("fields", {}),
+        fields=normalized_fields,
         confidence=data.get("confidence", 0.5),
         method="openai",
     )
+
+
+async def recognize_with_openai_files(
+    files: list[tuple[bytes, str, str | None]],
+    api_key: str,
+    doc_type_hint: str | None = None,
+) -> ScanResult:
+    client = AsyncOpenAI(api_key=api_key)
+    model = os.getenv("OPENAI_MODEL", "gpt-5.2")
+
+    user_text = [
+        "Please analyze these document file(s) as one logical document and extract the information.",
+        f"Total files: {len(files)}.",
+        "Files may include images, PDFs, or text documents.",
+    ]
+    if doc_type_hint:
+        user_text.append(
+            f"User-selected expected document type: {doc_type_hint}. Use this as a strong hint when determining doc_type."
+        )
+
+    user_content: list[dict[str, str]] = [
+        {"type": "input_text", "text": " ".join(user_text)},
+    ]
+    for idx, (file_bytes, content_type, filename) in enumerate(files, start=1):
+        resolved_name = filename or f"document_{idx}"
+        user_content.append(
+            {
+                "type": "input_file",
+                "filename": resolved_name,
+                "file_data": _data_url(file_bytes, content_type),
+            }
+        )
+
+    response = await client.responses.create(
+        model=model,
+        instructions=SYSTEM_PROMPT,
+        input=[
+            {"role": "user", "content": user_content},
+        ],
+        max_output_tokens=4000,
+    )
+
+    raw = _extract_response_text(response)
+    return _parse_result(raw)
+
+
+async def recognize_with_openai(
+    image_bytes: bytes,
+    content_type: str,
+    api_key: str,
+) -> ScanResult:
+    return await recognize_with_openai_files([(image_bytes, content_type, None)], api_key=api_key)

@@ -1,21 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Typography, Input, Empty, Spin, Button, App, Row, Col } from "antd";
 import { PlusOutlined, SearchOutlined, FileTextOutlined } from "@ant-design/icons";
 import api from "../api/client";
-import type { DocumentListItem, DocType } from "../types";
-import { DOC_TYPE_LABELS } from "../types";
+import type { DocumentListItem } from "../types";
+import { DOC_TYPE_LABELS, getDocTypeLabel } from "../types";
 import DocumentCard from "../components/DocumentCard";
 
 const { Title } = Typography;
-
-const FILTER_OPTIONS = [
-  { label: "All", value: "all" },
-  ...Object.entries(DOC_TYPE_LABELS).map(([value, label]) => ({
-    label,
-    value,
-  })),
-];
 
 export default function DocumentListPage() {
   const navigate = useNavigate();
@@ -43,19 +35,39 @@ export default function DocumentListPage() {
       )
     : docs;
 
+  const filterOptions = useMemo(() => {
+    const known = Object.entries(DOC_TYPE_LABELS).map(([value, label]) => ({
+      value,
+      label,
+    }));
+    const knownSet = new Set(known.map((item) => item.value));
+    const dynamic = Array.from(new Set(docs.map((d) => d.doc_type)))
+      .filter((type) => !knownSet.has(type))
+      .sort()
+      .map((value) => ({
+        value,
+        label: getDocTypeLabel(value),
+      }));
+
+    return [{ label: "All", value: "all" }, ...known, ...dynamic];
+  }, [docs]);
+
   return (
     <div className="content-container">
       <div className="section-header">
         <Title level={3} style={{ margin: 0 }}>
           Documents
         </Title>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => navigate("/documents/new")}
-        >
-          Add
-        </Button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <Button onClick={() => navigate("/types")}>Manage Types</Button>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => navigate("/documents/new")}
+          >
+            Add
+          </Button>
+        </div>
       </div>
 
       <Input
@@ -68,7 +80,7 @@ export default function DocumentListPage() {
       />
 
       <div className="filter-bar">
-        {FILTER_OPTIONS.map((opt) => (
+        {filterOptions.map((opt) => (
           <div
             key={opt.value}
             className={`filter-pill ${activeType === opt.value ? "active" : ""}`}

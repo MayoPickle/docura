@@ -8,14 +8,16 @@ import {
   TrophyOutlined,
   IdcardOutlined,
   CarOutlined,
+  FileTextOutlined,
+  ProfileOutlined,
   FileOutlined,
   ScanOutlined,
   PlusOutlined,
   RightOutlined,
 } from "@ant-design/icons";
 import api from "../api/client";
-import type { DocumentSummary, DocType } from "../types";
-import { DOC_TYPE_LABELS } from "../types";
+import type { DocumentSummary } from "../types";
+import { DOC_TYPE_LABELS, getDocTypeLabel } from "../types";
 import { useAuth } from "../contexts/AuthContext";
 
 const { Title, Text } = Typography;
@@ -27,6 +29,8 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   diploma: <TrophyOutlined />,
   id_card: <IdcardOutlined />,
   driver_license: <CarOutlined />,
+  i20: <FileTextOutlined />,
+  i797: <ProfileOutlined />,
   other: <FileOutlined />,
 };
 
@@ -37,6 +41,8 @@ const GRADIENT_MAP: Record<string, string> = {
   diploma: "linear-gradient(135deg, #f59e0b, #ef4444)",
   id_card: "linear-gradient(135deg, #ec4899, #f472b6)",
   driver_license: "linear-gradient(135deg, #10b981, #06b6d4)",
+  i20: "linear-gradient(135deg, #8b5cf6, #6366f1)",
+  i797: "linear-gradient(135deg, #f97316, #ea580c)",
   other: "linear-gradient(135deg, #6b7280, #9ca3af)",
 };
 
@@ -63,7 +69,11 @@ export default function DashboardPage() {
     );
   }
 
-  const types = Object.keys(DOC_TYPE_LABELS) as DocType[];
+  const knownTypes = Object.keys(DOC_TYPE_LABELS);
+  const dynamicTypes = Object.keys(summary?.by_type || {}).filter(
+    (key) => !knownTypes.includes(key)
+  );
+  const types = [...knownTypes, ...dynamicTypes];
 
   return (
     <div className="content-container">
@@ -123,15 +133,15 @@ export default function DashboardPage() {
             >
               <div
                 className="stat-card-icon"
-                style={{ background: GRADIENT_MAP[t], marginBottom: 14 }}
+                style={{ background: GRADIENT_MAP[t] || GRADIENT_MAP.other, marginBottom: 14 }}
               >
-                {ICON_MAP[t]}
+                {ICON_MAP[t] || ICON_MAP.other}
               </div>
               <Text
                 type="secondary"
                 style={{ fontSize: 12, display: "block", marginBottom: 2 }}
               >
-                {DOC_TYPE_LABELS[t]}
+                {getDocTypeLabel(t)}
               </Text>
               <Text
                 strong

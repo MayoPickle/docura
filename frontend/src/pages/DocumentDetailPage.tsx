@@ -3,7 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   Typography,
   Card,
-  Descriptions,
   Tag,
   Button,
   Spin,
@@ -23,23 +22,56 @@ import {
   CalendarOutlined,
   EyeOutlined,
   FileImageOutlined,
+  FilePdfOutlined,
+  CreditCardOutlined,
+  BookOutlined,
+  GlobalOutlined,
+  TrophyOutlined,
+  IdcardOutlined,
+  CarOutlined,
+  FileTextOutlined,
+  ProfileOutlined,
   FileOutlined,
 } from "@ant-design/icons";
 import type { UploadProps } from "antd";
 import api from "../api/client";
-import type { Document, DocType } from "../types";
-import { DOC_TYPE_LABELS, DOC_TYPE_FIELDS } from "../types";
+import type { Document, KnownDocType } from "../types";
+import { DOC_TYPE_FIELDS, getDocTypeLabel, toFieldLabel } from "../types";
 import dayjs from "dayjs";
 
 const { Title, Text } = Typography;
+
+const DOC_TYPE_ICON_MAP: Record<string, React.ReactNode> = {
+  credit_card: <CreditCardOutlined />,
+  passport: <BookOutlined />,
+  visa: <GlobalOutlined />,
+  diploma: <TrophyOutlined />,
+  id_card: <IdcardOutlined />,
+  driver_license: <CarOutlined />,
+  i20: <FileTextOutlined />,
+  i797: <ProfileOutlined />,
+  other: <FileOutlined />,
+};
 
 function isImage(contentType: string) {
   return contentType.startsWith("image/");
 }
 
-function fileUrl(fileId: number) {
+function isPdf(contentType: string, filename: string) {
+  if (contentType === "application/pdf") {
+    return true;
+  }
+  return filename.toLowerCase().endsWith(".pdf");
+}
+
+function fileUrl(fileId: number, download = false) {
   const token = localStorage.getItem("token");
-  return `/api/files/${fileId}?token=${encodeURIComponent(token || "")}`;
+  const params = new URLSearchParams();
+  params.set("token", token || "");
+  if (download) {
+    params.set("download", "1");
+  }
+  return `/api/files/${fileId}?${params.toString()}`;
 }
 
 export default function DocumentDetailPage() {
@@ -123,14 +155,29 @@ export default function DocumentDetailPage() {
     /* empty */
   }
 
-  const fieldDefs =
-    DOC_TYPE_FIELDS[doc.doc_type as DocType] || DOC_TYPE_FIELDS.other;
+  const knownFieldDefs =
+    DOC_TYPE_FIELDS[doc.doc_type as KnownDocType] || DOC_TYPE_FIELDS.other;
+  const knownFieldKeys = new Set(knownFieldDefs.map((f) => f.key));
+  const extraFieldDefs = Object.keys(fields)
+    .filter((key) => !knownFieldKeys.has(key))
+    .map((key) => ({ key, label: toFieldLabel(key) }));
+  const fieldDefs = [...knownFieldDefs, ...extraFieldDefs];
+  const fieldEntries = fieldDefs
+    .map((f) => ({
+      key: f.key,
+      label: f.label,
+      value: fields[f.key]?.toString().trim(),
+    }))
+    .filter((f) => Boolean(f.value));
 
   const imageFiles = doc.files.filter((f) => isImage(f.content_type));
-  const otherFiles = doc.files.filter((f) => !isImage(f.content_type));
+  const pdfFiles = doc.files.filter((f) => !isImage(f.content_type) && isPdf(f.content_type, f.filename));
+  const otherFiles = doc.files.filter(
+    (f) => !isImage(f.content_type) && !isPdf(f.content_type, f.filename)
+  );
 
   return (
-    <div className="content-container">
+    <div className="content-container doc-detail-page">
       <Button
         type="text"
         icon={<ArrowLeftOutlined />}
@@ -141,23 +188,20 @@ export default function DocumentDetailPage() {
       </Button>
 
       <Card
-        className="detail-card"
+        className="detail-card document-info-card"
         title={
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              paddingTop: 4,
-            }}
-          >
-            <Title level={4} style={{ margin: 0 }}>
+          <div className="detail-title-row">
+            <Title level={4} className="detail-title">
               {doc.title}
             </Title>
             <Tag
+              className="doc-type-tag"
               style={{ borderRadius: 999, fontWeight: 500, fontSize: 12 }}
             >
-              {DOC_TYPE_LABELS[doc.doc_type as DocType] || doc.doc_type}
+              <span className="doc-type-tag-icon">
+                {DOC_TYPE_ICON_MAP[doc.doc_type] || <FileOutlined />}
+              </span>
+              {getDocTypeLabel(doc.doc_type)}
             </Tag>
           </div>
         }
@@ -175,20 +219,18 @@ export default function DocumentDetailPage() {
           </Space>
         }
       >
-        <Descriptions
-          column={{ xs: 1, sm: 2 }}
-          size="small"
-          labelStyle={{ fontWeight: 500, color: "rgba(0,0,0,0.45)" }}
-          contentStyle={{ fontWeight: 500 }}
-        >
-          {fieldDefs.map((f) =>
-            fields[f.key] ? (
-              <Descriptions.Item key={f.key} label={f.label}>
-                {fields[f.key]}
-              </Descriptions.Item>
-            ) : null
-          )}
-        </Descriptions>
+        {fieldEntries.length > 0 ? (
+          <div className="doc-fields-grid">
+            {fieldEntries.map((field) => (
+              <div key={field.key} className="doc-field-item">
+                <Text className="doc-field-label">{field.label}</Text>
+                <div className="doc-field-value">{field.value}</div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <Text type="secondary">No extracted fields</Text>
+        )}
 
         {doc.notes && (
           <div className="notes-block">
@@ -207,15 +249,7 @@ export default function DocumentDetailPage() {
           </div>
         )}
 
-        <div
-          style={{
-            marginTop: 16,
-            display: "flex",
-            gap: 16,
-            fontSize: 12,
-            color: "rgba(0,0,0,0.4)",
-          }}
-        >
+        <div className="detail-meta">
           <span>
             <CalendarOutlined style={{ marginRight: 4 }} />
             Created {dayjs(doc.created_at).format("MMM D, YYYY")}
@@ -315,7 +349,7 @@ export default function DocumentDetailPage() {
                               type="text"
                               size="small"
                               icon={<DownloadOutlined />}
-                              href={fileUrl(file.id)}
+                              href={fileUrl(file.id, true)}
                               target="_blank"
                               style={{ fontSize: 12, padding: "0 4px" }}
                             />
@@ -337,6 +371,88 @@ export default function DocumentDetailPage() {
                     ))}
                   </div>
                 </Image.PreviewGroup>
+              </div>
+            )}
+
+            {pdfFiles.length > 0 && (
+              <div style={{ marginBottom: otherFiles.length > 0 ? 12 : 0 }}>
+                <Text
+                  type="secondary"
+                  style={{ display: "block", marginBottom: 8, fontSize: 12, fontWeight: 600 }}
+                >
+                  PDF Preview
+                </Text>
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {pdfFiles.map((file) => (
+                    <div
+                      key={file.id}
+                      style={{
+                        border: "1px solid rgba(0,0,0,0.08)",
+                        borderRadius: 12,
+                        overflow: "hidden",
+                        background: "#fff",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 10,
+                          padding: "10px 12px",
+                          borderBottom: "1px solid rgba(0,0,0,0.06)",
+                          background: "#fafafa",
+                        }}
+                      >
+                        <FilePdfOutlined style={{ fontSize: 18, color: "#d92d20" }} />
+                        <Text ellipsis style={{ flex: 1, fontWeight: 500 }}>
+                          {file.filename}
+                        </Text>
+                        <Button
+                          type="link"
+                          size="small"
+                          icon={<EyeOutlined />}
+                          href={fileUrl(file.id)}
+                          target="_blank"
+                        >
+                          Open
+                        </Button>
+                        <Button
+                          type="link"
+                          size="small"
+                          icon={<DownloadOutlined />}
+                          href={fileUrl(file.id, true)}
+                          target="_blank"
+                        >
+                          Download
+                        </Button>
+                        <Popconfirm
+                          title="Delete this file?"
+                          onConfirm={() => handleDeleteFile(file.id)}
+                        >
+                          <Button
+                            type="link"
+                            size="small"
+                            danger
+                            icon={<DeleteOutlined />}
+                          >
+                            Delete
+                          </Button>
+                        </Popconfirm>
+                      </div>
+                      <iframe
+                        title={`PDF Preview - ${file.filename}`}
+                        src={fileUrl(file.id)}
+                        style={{
+                          width: "100%",
+                          height: 460,
+                          border: "none",
+                          display: "block",
+                          background: "#fff",
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -377,7 +493,7 @@ export default function DocumentDetailPage() {
                       type="link"
                       size="small"
                       icon={<DownloadOutlined />}
-                      href={fileUrl(file.id)}
+                      href={fileUrl(file.id, true)}
                       target="_blank"
                     >
                       Download

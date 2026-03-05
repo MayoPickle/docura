@@ -83,6 +83,22 @@ class DocumentListResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class DocumentTypeCount(BaseModel):
+    doc_type: str
+    count: int
+
+
+class RenameDocTypeRequest(BaseModel):
+    from_type: str
+    to_type: str
+
+
+class RenameDocTypeResponse(BaseModel):
+    from_type: str
+    to_type: str
+    updated_count: int
+
+
 # --- Scan ---
 
 class ScanResult(BaseModel):

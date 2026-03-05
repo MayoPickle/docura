@@ -12,8 +12,8 @@ import {
 } from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import api from "../api/client";
-import type { DocType } from "../types";
-import { DOC_TYPE_LABELS, DOC_TYPE_FIELDS } from "../types";
+import type { DocType, KnownDocType } from "../types";
+import { DOC_TYPE_LABELS, DOC_TYPE_FIELDS, getDocTypeLabel, toFieldLabel } from "../types";
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -33,6 +33,7 @@ export default function DocumentFormPage() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [docType, setDocType] = useState<DocType>("other");
+  const [customFieldKeys, setCustomFieldKeys] = useState<string[]>([]);
 
   const isEdit = !!id;
 
@@ -56,6 +57,7 @@ export default function DocumentFormPage() {
             ...fields,
           });
           setDocType(doc.doc_type);
+          setCustomFieldKeys(Object.keys(fields));
         })
         .catch(() => message.error("Failed to load document"))
         .finally(() => setLoading(false));
@@ -89,7 +91,24 @@ export default function DocumentFormPage() {
     }
   };
 
-  const fieldDefs = DOC_TYPE_FIELDS[docType] || DOC_TYPE_FIELDS.other;
+  const knownFieldDefs =
+    DOC_TYPE_FIELDS[docType as KnownDocType] || DOC_TYPE_FIELDS.other;
+  const knownFieldKeys = new Set(knownFieldDefs.map((f) => f.key));
+  const dynamicFieldDefs = customFieldKeys
+    .filter((key) => !knownFieldKeys.has(key))
+    .map((key) => ({ key, label: toFieldLabel(key) }));
+  const fieldDefs = [...knownFieldDefs, ...dynamicFieldDefs];
+
+  const docTypeOptions = (() => {
+    const base = [...DOC_TYPE_OPTIONS];
+    if (docType && !base.some((opt) => opt.value === docType)) {
+      base.unshift({
+        value: docType,
+        label: getDocTypeLabel(docType),
+      });
+    }
+    return base;
+  })();
 
   if (loading) {
     return (
@@ -141,7 +160,7 @@ export default function DocumentFormPage() {
             rules={[{ required: true }]}
           >
             <Select
-              options={DOC_TYPE_OPTIONS}
+              options={docTypeOptions}
               onChange={(val) => setDocType(val as DocType)}
             />
           </Form.Item>

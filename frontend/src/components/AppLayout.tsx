@@ -5,6 +5,7 @@ import {
   HomeOutlined,
   FileTextOutlined,
   ScanOutlined,
+  TagsOutlined,
   LogoutOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "../contexts/AuthContext";
@@ -16,6 +17,7 @@ const { Text } = Typography;
 const NAV_ITEMS = [
   { key: "/", icon: <HomeOutlined />, label: "Home" },
   { key: "/documents", icon: <FileTextOutlined />, label: "Documents" },
+  { key: "/types", icon: <TagsOutlined />, label: "Types" },
   { key: "/scan", icon: <ScanOutlined />, label: "Scan" },
 ];
 

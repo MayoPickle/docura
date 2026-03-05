@@ -10,6 +10,7 @@ import DocumentListPage from "./pages/DocumentListPage";
 import DocumentDetailPage from "./pages/DocumentDetailPage";
 import DocumentFormPage from "./pages/DocumentFormPage";
 import SmartScanPage from "./pages/SmartScanPage";
+import DocumentTypesPage from "./pages/DocumentTypesPage";
 
 export default function App() {
   return (
@@ -68,6 +69,7 @@ export default function App() {
                 <Route path="/" element={<DashboardPage />} />
                 <Route path="/documents" element={<DocumentListPage />} />
                 <Route path="/documents/new" element={<DocumentFormPage />} />
+                <Route path="/types" element={<DocumentTypesPage />} />
                 <Route
                   path="/documents/:id"
                   element={<DocumentDetailPage />}

@@ -1,7 +1,11 @@
+import sys
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+
+if sys.version_info < (3, 12):
+    raise RuntimeError("Docura backend requires Python 3.12 or newer.")
 
 load_dotenv()
 
@@ -33,4 +37,8 @@ app.include_router(scan.router, prefix="/api/documents", tags=["Scan"])
 
 @app.get("/api/health")
 async def health():
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "python": f"{sys.version_info.major}.{sys.version_info.minor}",
+        "scan_supports": ["image/*", "application/pdf", "text/plain"],
+    }

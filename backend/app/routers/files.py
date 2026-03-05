@@ -1,13 +1,11 @@
 import os
-import uuid
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import FileResponse as FastAPIFileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from ..database import get_db
 from ..models import User, Document, File
-from ..schemas import FileResponse
 from ..deps import get_current_user, get_current_user_flexible
 
 router = APIRouter()
@@ -19,6 +17,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 @router.get("/{file_id}")
 async def download_file(
     file_id: int,
+    download: bool = Query(False),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user_flexible),
 ):
@@ -36,6 +35,7 @@ async def download_file(
         path=file.filepath,
         filename=file.filename,
         media_type=file.content_type,
+        content_disposition_type="attachment" if download else "inline",
     )
 
 

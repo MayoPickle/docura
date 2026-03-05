@@ -1,7 +1,7 @@
 import { Form, Input, Select, Button, Typography } from "antd";
 import { CheckCircleOutlined } from "@ant-design/icons";
-import type { ScanResult, DocType } from "../types";
-import { DOC_TYPE_LABELS, DOC_TYPE_FIELDS } from "../types";
+import type { ScanResult, DocType, KnownDocType } from "../types";
+import { DOC_TYPE_LABELS, DOC_TYPE_FIELDS, getDocTypeLabel, toFieldLabel } from "../types";
 
 const { Text } = Typography;
 
@@ -28,15 +28,31 @@ export default function ScanResultReview({
   const [form] = Form.useForm();
   const docType = Form.useWatch("doc_type", form) as DocType | undefined;
 
-  const fieldDefs =
-    DOC_TYPE_FIELDS[(docType || result.doc_type) as DocType] ||
-    DOC_TYPE_FIELDS.other;
+  const currentDocType = docType || result.doc_type;
+  const knownFieldDefs =
+    DOC_TYPE_FIELDS[currentDocType as KnownDocType] || DOC_TYPE_FIELDS.other;
+  const knownFieldKeys = new Set(knownFieldDefs.map((f) => f.key));
+  const dynamicFieldDefs = Object.keys(result.fields || {})
+    .filter((key) => !knownFieldKeys.has(key))
+    .map((key) => ({ key, label: toFieldLabel(key) }));
+  const fieldDefs = [...knownFieldDefs, ...dynamicFieldDefs];
 
   const initialValues: Record<string, string> = {
     title: result.title,
     doc_type: result.doc_type,
     ...result.fields,
   };
+
+  const docTypeOptions = (() => {
+    const base = [...DOC_TYPE_OPTIONS];
+    if (!base.some((opt) => opt.value === result.doc_type)) {
+      base.unshift({
+        value: result.doc_type,
+        label: getDocTypeLabel(result.doc_type),
+      });
+    }
+    return base;
+  })();
 
   const pct = Math.round(result.confidence * 100);
   const level =
@@ -95,7 +111,7 @@ export default function ScanResultReview({
           label="Document Type"
           rules={[{ required: true }]}
         >
-          <Select options={DOC_TYPE_OPTIONS} />
+          <Select options={docTypeOptions} />
         </Form.Item>
 
         <div className="field-group">

@@ -7,7 +7,7 @@ A mobile-first personal document management web app. Store and organize your cre
 - **Frontend**: React 18 + TypeScript + Ant Design 5 + Vite
 - **Backend**: Python + FastAPI + SQLAlchemy (async)
 - **Database**: SQLite (via aiosqlite)
-- **AI/OCR**: OpenAI GPT-4o Vision (primary) / Tesseract OCR (fallback)
+- **AI/OCR**: OpenAI Responses API (`gpt-5.2` default) / PaddleOCR (fallback)
 
 ## Features
 
@@ -15,14 +15,15 @@ A mobile-first personal document management web app. Store and organize your cre
 - Mobile-first responsive design (bottom tabs on mobile, sidebar on desktop)
 - Document CRUD with type-specific structured fields
 - File attachments with upload/download
-- Smart Scan: upload a document photo and AI automatically classifies it and extracts fields
+- Smart Scan: upload image/PDF/text files and AI automatically classifies and extracts fields
+- Smart Scan supports AI-generated categories and dynamic fields for uncommon documents (e.g. LCA)
 - Dashboard with document summary by type
 
 ## Getting Started
 
 ### Prerequisites
 
-- Python 3.9+
+- Python 3.12+
 - Node.js 18+
 - (Optional) Tesseract OCR: `brew install tesseract`
 - (Optional) OpenAI API key for AI-powered document recognition
@@ -31,15 +32,13 @@ A mobile-first personal document management web app. Store and organize your cre
 
 ```bash
 cd backend
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+python3 -m pip install -r requirements.txt
 
 # Optional: create .env with your OpenAI key for Smart Scan
 echo "OPENAI_API_KEY=sk-..." > .env
 
 # Start the server
-uvicorn app.main:app --reload --port 8000
+python3 -m uvicorn app.main:app --reload --port 8000
 ```
 
 ### Frontend Setup
@@ -59,8 +58,8 @@ The frontend runs on http://localhost:3000 and proxies API requests to the backe
 | `SECRET_KEY` | `docura-dev-secret-change-in-production` | JWT signing key |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `1440` | Token expiry (default 24h) |
 | `DATABASE_URL` | `sqlite+aiosqlite:///./docura.db` | Database connection string |
-| `OPENAI_API_KEY` | (none) | Enables GPT-4o Vision for Smart Scan |
-| `OPENAI_MODEL` | `gpt-4o` | OpenAI model to use |
+| `OPENAI_API_KEY` | (none) | Enables OpenAI Vision for Smart Scan |
+| `OPENAI_MODEL` | `gpt-5.2` | OpenAI model to use |
 
 ## API Endpoints
 
@@ -88,4 +87,6 @@ The frontend runs on http://localhost:3000 and proxies API requests to the backe
 - Diploma
 - ID Card
 - Driver License
+- I-20
+- I-797
 - Other

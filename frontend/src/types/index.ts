@@ -54,36 +54,44 @@ export interface ScanResult {
   method: string;
 }
 
-export type DocType =
+export type KnownDocType =
   | "credit_card"
   | "passport"
   | "visa"
   | "diploma"
   | "id_card"
   | "driver_license"
+  | "i20"
+  | "i797"
   | "other";
 
-export const DOC_TYPE_LABELS: Record<DocType, string> = {
+export type DocType = string;
+
+export const DOC_TYPE_LABELS: Record<KnownDocType, string> = {
   credit_card: "Credit Card",
   passport: "Passport",
   visa: "Visa",
   diploma: "Diploma",
   id_card: "ID Card",
   driver_license: "Driver License",
+  i20: "I-20",
+  i797: "I-797",
   other: "Other",
 };
 
-export const DOC_TYPE_ICONS: Record<DocType, string> = {
+export const DOC_TYPE_ICONS: Record<KnownDocType, string> = {
   credit_card: "CreditCardOutlined",
   passport: "BookOutlined",
   visa: "GlobalOutlined",
   diploma: "TrophyOutlined",
   id_card: "IdcardOutlined",
   driver_license: "CarOutlined",
+  i20: "FileTextOutlined",
+  i797: "ProfileOutlined",
   other: "FileOutlined",
 };
 
-export const DOC_TYPE_FIELDS: Record<DocType, { key: string; label: string }[]> = {
+export const DOC_TYPE_FIELDS: Record<KnownDocType, { key: string; label: string }[]> = {
   credit_card: [
     { key: "card_number", label: "Card Number" },
     { key: "cardholder_name", label: "Cardholder Name" },
@@ -136,7 +144,46 @@ export const DOC_TYPE_FIELDS: Record<DocType, { key: string; label: string }[]> 
     { key: "issue_date", label: "Issue Date" },
     { key: "expiry_date", label: "Expiry Date" },
   ],
+  i20: [
+    { key: "sevis_id", label: "SEVIS ID" },
+    { key: "school_name", label: "School Name" },
+    { key: "full_name", label: "Full Name" },
+    { key: "program", label: "Program" },
+    { key: "start_date", label: "Start Date" },
+    { key: "end_date", label: "End Date" },
+  ],
+  i797: [
+    { key: "receipt_number", label: "Receipt Number" },
+    { key: "notice_type", label: "Notice Type" },
+    { key: "petitioner", label: "Petitioner" },
+    { key: "beneficiary", label: "Beneficiary" },
+    { key: "received_date", label: "Received Date" },
+    { key: "notice_date", label: "Notice Date" },
+    { key: "start_date", label: "Start Date" },
+    { key: "end_date", label: "End Date" },
+    { key: "class_requested", label: "Class Requested" },
+  ],
   other: [
     { key: "description", label: "Description" },
   ],
 };
+
+export function getDocTypeLabel(docType: string): string {
+  const known = DOC_TYPE_LABELS[docType as KnownDocType];
+  if (known) {
+    return known;
+  }
+  return docType
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (m) => m.toUpperCase()) || "Other";
+}
+
+export function toFieldLabel(key: string): string {
+  return key
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (m) => m.toUpperCase());
+}
