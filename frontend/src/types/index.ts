@@ -88,6 +88,7 @@ export const DOC_TYPE_FIELDS: Record<DocType, { key: string; label: string }[]> 
     { key: "card_number", label: "Card Number" },
     { key: "cardholder_name", label: "Cardholder Name" },
     { key: "expiry_date", label: "Expiry Date" },
+    { key: "security_code", label: "Security Code" },
     { key: "bank", label: "Bank" },
     { key: "card_type", label: "Card Type" },
   ],
