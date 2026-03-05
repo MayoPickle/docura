@@ -107,6 +107,129 @@ body {
   box-shadow: var(--shadow-md);
 }
 
+.login-auth-bg {
+  background:
+    radial-gradient(circle at 12% 12%, rgba(0, 0, 0, 0.035) 0%, transparent 38%),
+    radial-gradient(circle at 88% 82%, rgba(0, 0, 0, 0.03) 0%, transparent 42%),
+    linear-gradient(150deg, #fcfcfc 0%, #f4f4f5 100%);
+}
+
+.login-bg-decor {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.floating-card {
+  position: absolute;
+  width: 190px;
+  height: 116px;
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.95) 0%, rgba(245, 245, 245, 0.85) 100%);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.07);
+  backdrop-filter: blur(4px);
+  transform: rotate(-14deg);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.floating-card .chip {
+  width: 30px;
+  height: 22px;
+  border-radius: 6px;
+  background: rgba(24, 24, 27, 0.12);
+}
+
+.floating-card .line {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(24, 24, 27, 0.12);
+}
+
+.floating-card .line-short {
+  width: 58%;
+}
+
+.card-1 {
+  top: 9%;
+  left: 8%;
+}
+
+.card-2 {
+  top: 24%;
+  right: 8%;
+  transform: rotate(15deg);
+}
+
+.card-3 {
+  bottom: 12%;
+  left: 14%;
+  transform: rotate(-8deg);
+}
+
+.doc-sheet {
+  position: absolute;
+  width: 150px;
+  height: 200px;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.05);
+}
+
+.doc-sheet::before {
+  content: "";
+  position: absolute;
+  top: 24px;
+  left: 18px;
+  right: 18px;
+  height: 2px;
+  background: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 20px 0 rgba(0, 0, 0, 0.08), 0 40px 0 rgba(0, 0, 0, 0.08), 0 60px 0 rgba(0, 0, 0, 0.08);
+}
+
+.doc-1 {
+  right: 15%;
+  bottom: 10%;
+  transform: rotate(8deg);
+}
+
+.doc-2 {
+  right: 25%;
+  top: 12%;
+  transform: rotate(-11deg);
+}
+
+.doc-3 {
+  left: 24%;
+  bottom: 3%;
+  transform: rotate(16deg);
+}
+
+@media (max-width: 900px) {
+  .floating-card,
+  .doc-sheet {
+    opacity: 0.55;
+    transform: scale(0.85);
+  }
+
+  .card-2 {
+    top: 14%;
+    right: -2%;
+  }
+}
+
+@media (max-width: 640px) {
+  .floating-card,
+  .doc-sheet {
+    display: none;
+  }
+}
+
 /* ===== Modern sidebar ===== */
 .modern-sider .ant-layout-sider-children {
   display: flex;
