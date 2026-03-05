@@ -76,20 +76,19 @@ export default function DashboardPage() {
             You have <strong>{summary?.total || 0}</strong> documents stored
             securely.
           </p>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <div className="hero-actions">
             <Button
-              className="hero-action hero-action-secondary"
+              className="hero-action hero-action-primary"
               icon={<ScanOutlined />}
               onClick={() => navigate("/scan")}
             >
               Smart Scan
             </Button>
-          <Button
-            className="hero-action hero-action-primary"
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => navigate("/documents/new")}
-          >
+            <Button
+              className="hero-action hero-action-secondary"
+              icon={<PlusOutlined />}
+              onClick={() => navigate("/documents/new")}
+            >
               Add Document
             </Button>
           </div>

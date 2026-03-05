@@ -349,12 +349,20 @@ body {
   margin: 8px 0 0;
 }
 
+.hero-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: nowrap;
+  align-items: center;
+}
+
 .hero-action {
   height: 46px;
   border-radius: 14px;
   padding-inline: 22px;
   font-weight: 600;
   box-shadow: none;
+  white-space: nowrap;
 }
 
 .hero-action.hero-action-secondary {
