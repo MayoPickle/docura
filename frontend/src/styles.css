@@ -165,9 +165,6 @@ a {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  font-size: 20px;
 }
 
 .app-brand img {
@@ -236,9 +233,14 @@ a {
   align-items: center;
   gap: 10px;
   border-bottom: 1px solid var(--line);
+}
+
+.brand-word {
   font-size: 22px;
   font-weight: 800;
   letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--text-primary);
 }
 
 .sider-logo.sider-logo-collapsed {
@@ -307,15 +309,13 @@ a {
   padding: 16px;
   display: grid;
   place-items: center;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
   background:
     radial-gradient(circle at 80% 10%, rgba(245, 158, 11, 0.08) 0%, transparent 38%),
     radial-gradient(circle at 14% 80%, rgba(13, 148, 136, 0.08) 0%, transparent 42%),
     #f6f7f2;
-}
-
-.login-auth-bg {
-  position: relative;
-  overflow: hidden;
 }
 
 .auth-card {
@@ -345,15 +345,103 @@ a {
   text-align: center;
 }
 
-.login-bg-decor {
+.auth-bg-decor {
   position: absolute;
   inset: 0;
   pointer-events: none;
+  z-index: 1;
 }
 
 .floating-card,
 .doc-sheet {
-  display: none;
+  position: absolute;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.58);
+  border: 1px solid rgba(17, 94, 89, 0.11);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.floating-card {
+  width: 124px;
+  height: 78px;
+  box-shadow: var(--shadow-md);
+  padding: 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.floating-card .chip {
+  width: 24px;
+  height: 16px;
+  border-radius: 6px;
+  background: rgba(15, 118, 110, 0.25);
+}
+
+.floating-card .line {
+  height: 6px;
+  border-radius: 99px;
+  background: rgba(17, 94, 89, 0.2);
+}
+
+.floating-card .line-short {
+  width: 58%;
+}
+
+.card-1 {
+  top: 7%;
+  left: -24px;
+  transform: rotate(-12deg);
+}
+
+.card-2 {
+  top: 13%;
+  right: -22px;
+  transform: rotate(14deg);
+}
+
+.card-3 {
+  bottom: 9%;
+  left: -22px;
+  transform: rotate(-8deg);
+}
+
+.doc-sheet {
+  width: 86px;
+  height: 122px;
+}
+
+.doc-sheet::before {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 18px;
+  height: 2px;
+  background: rgba(17, 94, 89, 0.24);
+  box-shadow:
+    0 14px 0 rgba(17, 94, 89, 0.24),
+    0 28px 0 rgba(17, 94, 89, 0.24),
+    0 42px 0 rgba(17, 94, 89, 0.24);
+}
+
+.doc-1 {
+  right: -8px;
+  bottom: 8%;
+  transform: rotate(10deg);
+}
+
+.doc-2 {
+  right: 12%;
+  top: 23%;
+  transform: rotate(-10deg);
+}
+
+.doc-3 {
+  left: 10%;
+  bottom: 1%;
+  transform: rotate(17deg);
 }
 
 /* Dashboard */
@@ -1035,12 +1123,11 @@ a {
 
   .floating-card,
   .doc-sheet {
-    display: block;
-    position: absolute;
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.65);
     border: 1px solid rgba(17, 94, 89, 0.14);
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
   }
 
   .floating-card {
@@ -1048,8 +1135,6 @@ a {
     height: 108px;
     box-shadow: var(--shadow-lg);
     padding: 12px;
-    display: flex;
-    flex-direction: column;
     gap: 8px;
   }
 
@@ -1094,13 +1179,9 @@ a {
   }
 
   .doc-sheet::before {
-    content: "";
-    position: absolute;
     left: 16px;
     right: 16px;
     top: 26px;
-    height: 2px;
-    background: rgba(17, 94, 89, 0.24);
     box-shadow:
       0 18px 0 rgba(17, 94, 89, 0.24),
       0 36px 0 rgba(17, 94, 89, 0.24),

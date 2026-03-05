@@ -44,7 +44,27 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="auth-bg">
+    <div className="auth-bg auth-with-decor">
+      <div className="auth-bg-decor" aria-hidden="true">
+        <div className="floating-card card-1">
+          <span className="chip" />
+          <span className="line line-short" />
+          <span className="line" />
+        </div>
+        <div className="floating-card card-2">
+          <span className="chip" />
+          <span className="line" />
+          <span className="line line-short" />
+        </div>
+        <div className="floating-card card-3">
+          <span className="chip" />
+          <span className="line line-short" />
+          <span className="line" />
+        </div>
+        <div className="doc-sheet doc-1" />
+        <div className="doc-sheet doc-2" />
+        <div className="doc-sheet doc-3" />
+      </div>
       <div className="auth-card">
         <Card>
           <div className="auth-logo">

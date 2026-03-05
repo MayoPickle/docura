@@ -27,8 +27,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="auth-bg login-auth-bg">
-      <div className="login-bg-decor" aria-hidden="true">
+    <div className="auth-bg auth-with-decor">
+      <div className="auth-bg-decor" aria-hidden="true">
         <div className="floating-card card-1">
           <span className="chip" />
           <span className="line line-short" />

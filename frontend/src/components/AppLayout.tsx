@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { Layout, Menu, Grid, Dropdown, Typography, Tooltip } from "antd";
+import { Layout, Menu, Grid, Dropdown, Tooltip } from "antd";
 import {
   HomeOutlined,
   FileTextOutlined,
@@ -12,7 +12,6 @@ import { useAuth } from "../contexts/AuthContext";
 
 const { Header, Sider, Content } = Layout;
 const { useBreakpoint } = Grid;
-const { Text } = Typography;
 
 const NAV_ITEMS = [
   { key: "/", icon: <HomeOutlined />, label: "Home" },
@@ -79,7 +78,7 @@ export default function AppLayout() {
               width={32}
               height={32}
             />
-            <Text strong>Docura</Text>
+            <span className="brand-word">Docura</span>
           </div>
           <Dropdown menu={userMenu} trigger={["click"]} placement="bottomRight">
             <div className="user-avatar">{initials}</div>
@@ -122,7 +121,7 @@ export default function AppLayout() {
           className={`sider-logo ${collapsed ? "sider-logo-collapsed" : ""}`}
         >
           <img src="/icon.png" alt="" width={34} height={34} />
-          {!collapsed && "Docura"}
+          {!collapsed && <span className="brand-word">Docura</span>}
         </div>
 
         <div style={{ padding: "8px 0", flex: 1 }}>
