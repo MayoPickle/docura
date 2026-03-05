@@ -1,12 +1,14 @@
 import os
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from fastapi.responses import FileResponse as FastAPIFileResponse
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from urllib.parse import quote
 
 from ..database import get_db
 from ..models import User, Document, File
 from ..deps import get_current_user, get_current_user_flexible
+from ..services.file_crypto import read_plaintext_file, FileCryptoError
 
 router = APIRouter()
 
@@ -31,11 +33,19 @@ async def download_file(
     if not os.path.exists(file.filepath):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File missing from disk")
 
-    return FastAPIFileResponse(
-        path=file.filepath,
-        filename=file.filename,
+    try:
+        file_content = read_plaintext_file(file.filepath)
+    except FileCryptoError as exc:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)) from exc
+
+    disposition = "attachment" if download else "inline"
+    encoded_name = quote(file.filename)
+    return Response(
+        content=file_content,
         media_type=file.content_type,
-        content_disposition_type="attachment" if download else "inline",
+        headers={
+            "Content-Disposition": f"{disposition}; filename*=UTF-8''{encoded_name}",
+        },
     )
 
 

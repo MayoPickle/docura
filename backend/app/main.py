@@ -11,10 +11,12 @@ load_dotenv()
 
 from .database import init_db
 from .routers import auth, documents, files, scan
+from .services.file_crypto import ensure_file_crypto_ready
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    ensure_file_crypto_ready()
     await init_db()
     yield
 

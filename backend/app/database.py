@@ -18,5 +18,8 @@ async def get_db():
 
 
 async def init_db():
+    # Ensure ORM models are imported so Base.metadata contains all tables.
+    from . import models  # noqa: F401
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

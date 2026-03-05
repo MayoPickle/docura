@@ -10,6 +10,7 @@ from ..models import User, Document, File as DocumentFile
 from ..schemas import FileResponse, ScanResult, ScanDuplicateCheckResponse, ScanDuplicateItem
 from ..deps import get_current_user
 from ..services.ocr_service import recognize_documents
+from ..services.file_crypto import encrypt_for_storage, plaintext_sha256_file, FileCryptoError
 
 router = APIRouter()
 
@@ -27,14 +28,7 @@ def _sha256_bytes(content: bytes) -> str:
 
 
 def _sha256_file(path: str) -> str | None:
-    digest = hashlib.sha256()
-    try:
-        with open(path, "rb") as f:
-            for chunk in iter(lambda: f.read(8192), b""):
-                digest.update(chunk)
-    except OSError:
-        return None
-    return digest.hexdigest()
+    return plaintext_sha256_file(path)
 
 
 async def _find_duplicate_user_file(
@@ -153,21 +147,28 @@ async def upload_file(
 
     content = await file.read()
     if not allow_duplicate:
-        duplicate = await _find_duplicate_user_file(db=db, user_id=current_user.id, content=content)
-        if duplicate:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail={
-                    "code": "DUPLICATE_FILE",
-                    "message": "This file already exists.",
-                    "existing_file_id": duplicate.id,
-                    "existing_document_id": duplicate.document_id,
-                    "existing_filename": duplicate.filename,
-                },
-            )
+        try:
+            duplicate = await _find_duplicate_user_file(db=db, user_id=current_user.id, content=content)
+            if duplicate:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail={
+                        "code": "DUPLICATE_FILE",
+                        "message": "This file already exists.",
+                        "existing_file_id": duplicate.id,
+                        "existing_document_id": duplicate.document_id,
+                        "existing_filename": duplicate.filename,
+                    },
+                )
+        except FileCryptoError as exc:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)) from exc
 
+    try:
+        encrypted_content = encrypt_for_storage(content)
+    except FileCryptoError as exc:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)) from exc
     with open(filepath, "wb") as f:
-        f.write(content)
+        f.write(encrypted_content)
 
     db_file = DocumentFile(
         document_id=document_id,
@@ -197,7 +198,10 @@ async def check_scan_duplicates(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Maximum 10 files are supported")
 
     scan_files = await _read_scan_files(upload_files)
-    existing_hashes = await _build_user_file_hash_index(db=db, user_id=current_user.id)
+    try:
+        existing_hashes = await _build_user_file_hash_index(db=db, user_id=current_user.id)
+    except FileCryptoError as exc:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)) from exc
 
     duplicates: list[ScanDuplicateItem] = []
     for file_bytes, _, filename in scan_files:
