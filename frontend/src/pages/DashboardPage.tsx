@@ -78,26 +78,17 @@ export default function DashboardPage() {
           </p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <Button
+              className="hero-action hero-action-secondary"
               icon={<ScanOutlined />}
               onClick={() => navigate("/scan")}
-              style={{
-                background: "rgba(255,255,255,0.2)",
-                borderColor: "rgba(255,255,255,0.3)",
-                color: "#fff",
-              }}
             >
               Smart Scan
             </Button>
           <Button
+            className="hero-action hero-action-primary"
             type="primary"
             icon={<PlusOutlined />}
             onClick={() => navigate("/documents/new")}
-            style={{
-              background: "rgba(255,255,255,0.95)",
-              borderColor: "transparent",
-              color: "#18181b",
-              fontWeight: 600,
-            }}
           >
               Add Document
             </Button>
