@@ -48,7 +48,7 @@ def _classify_and_extract(text: str, text_upper: str) -> tuple:
     if "PASSPORT" in text_upper:
         return _extract_passport(text, text_upper)
     if _has_credit_card_number(text):
-        return _extract_credit_card(text)
+        return _extract_credit_card(text, text_upper)
     if "VISA" in text_upper:
         return _extract_visa(text, text_upper)
     if any(kw in text_upper for kw in ["DIPLOMA", "DEGREE", "UNIVERSITY", "COLLEGE", "CERTIFICATE"]):
@@ -109,8 +109,8 @@ def _extract_passport(text: str, text_upper: str) -> tuple:
     return "passport", "Passport", fields, 0.5
 
 
-def _extract_credit_card(text: str) -> tuple:
-    fields = {"card_number": "", "cardholder_name": "", "expiry_date": "", "bank": ""}
+def _extract_credit_card(text: str, text_upper: str) -> tuple:
+    fields = {"card_number": "", "cardholder_name": "", "expiry_date": "", "security_code": "", "bank": ""}
 
     digits = re.findall(r"\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}", text)
     if digits:
@@ -119,6 +119,10 @@ def _extract_credit_card(text: str) -> tuple:
     exp = re.search(r"(\d{2}/\d{2,4})", text)
     if exp:
         fields["expiry_date"] = exp.group(1)
+
+    cvv_match = re.search(r"(?:CVV|CVC|CID|SECURITY\s*CODE)\D{0,6}(\d{3,4})", text_upper)
+    if cvv_match:
+        fields["security_code"] = cvv_match.group(1)
 
     names = re.findall(r"[A-Z][A-Z\s]{3,30}", text)
     for n in names:
