@@ -21,7 +21,7 @@ Return ONLY valid JSON in this exact format (no markdown, no extra text):
 }
 
 Field schemas by document type:
-- credit_card: {"card_number": "", "cardholder_name": "", "expiry_date": "", "bank": "", "card_type": ""}
+- credit_card: {"card_number": "", "cardholder_name": "", "expiry_date": "", "security_code": "", "bank": "", "card_type": ""}
 - passport: {"passport_number": "", "full_name": "", "nationality": "", "date_of_birth": "", "sex": "", "issue_date": "", "expiry_date": "", "place_of_birth": ""}
 - visa: {"visa_number": "", "full_name": "", "country": "", "visa_type": "", "issue_date": "", "expiry_date": "", "entries": ""}
 - diploma: {"institution": "", "degree": "", "major": "", "full_name": "", "graduation_date": ""}

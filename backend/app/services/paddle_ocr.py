@@ -232,6 +232,7 @@ def _extract_credit_card(lines: list[dict], text: str, text_upper: str) -> tuple
         "card_number": "",
         "cardholder_name": "",
         "expiry_date": "",
+        "security_code": "",
         "bank": "",
         "card_type": "",
     }
@@ -257,6 +258,10 @@ def _extract_credit_card(lines: list[dict], text: str, text_upper: str) -> tuple
     exp = re.search(r"(\d{2}\s*/\s*\d{2,4})", text)
     if exp:
         fields["expiry_date"] = exp.group(1).replace(" ", "")
+
+    cvv_match = re.search(r"(?:CVV|CVC|CID|SECURITY\s*CODE)\D{0,6}(\d{3,4})", text_upper)
+    if cvv_match:
+        fields["security_code"] = cvv_match.group(1)
 
     fields["cardholder_name"] = _find_value_after_label(lines, r"card\s*holder|name")
     if not fields["cardholder_name"]:
