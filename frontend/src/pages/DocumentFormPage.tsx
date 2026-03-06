@@ -5,7 +5,7 @@ import {
   Card,
   Form,
   Input,
-  Select,
+  AutoComplete,
   Button,
   Spin,
   App,
@@ -159,9 +159,18 @@ export default function DocumentFormPage() {
             label="Document Type"
             rules={[{ required: true }]}
           >
-            <Select
+            <AutoComplete
               options={docTypeOptions}
               onChange={(val) => setDocType(val as DocType)}
+              filterOption={(inputValue, option) =>
+                String(option?.label || "")
+                  .toLowerCase()
+                  .includes(inputValue.toLowerCase()) ||
+                String(option?.value || "")
+                  .toLowerCase()
+                  .includes(inputValue.toLowerCase())
+              }
+              placeholder="Select or type a document type"
             />
           </Form.Item>
 

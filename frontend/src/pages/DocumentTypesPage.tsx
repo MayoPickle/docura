@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { App, Button, Card, Form, Input, Modal, Table, Tag, Typography } from "antd";
+import { App, Button, Card, Form, Grid, Input, Modal, Table, Tag, Typography } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { EditOutlined, TagsOutlined } from "@ant-design/icons";
 import api from "../api/client";
-import { getDocTypeLabel } from "../types";
+import { DOC_TYPE_LABELS, getDocTypeLabel } from "../types";
 
 const { Title, Text } = Typography;
 
@@ -16,8 +16,12 @@ interface RenameForm {
   to_type: string;
 }
 
+const KNOWN_TYPES = Object.keys(DOC_TYPE_LABELS);
+
 export default function DocumentTypesPage() {
   const { message } = App.useApp();
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.sm;
   const [rows, setRows] = useState<DocTypeRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [renaming, setRenaming] = useState(false);
@@ -76,6 +80,16 @@ export default function DocumentTypesPage() {
     }
   };
 
+  const tableRows = useMemo(() => {
+    const rowMap = new Map(rows.map((row) => [row.doc_type, row]));
+    const knownRows = KNOWN_TYPES.map((docType) => rowMap.get(docType) || { doc_type: docType, count: 0 });
+    const knownSet = new Set(KNOWN_TYPES);
+    const customRows = rows
+      .filter((row) => !knownSet.has(row.doc_type))
+      .sort((a, b) => b.count - a.count || a.doc_type.localeCompare(b.doc_type));
+    return [...knownRows, ...customRows];
+  }, [rows]);
+
   const columns: ColumnsType<DocTypeRow> = useMemo(
     () => [
       {
@@ -83,32 +97,39 @@ export default function DocumentTypesPage() {
         dataIndex: "doc_type",
         key: "doc_type",
         render: (value: string) => (
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Tag style={{ margin: 0, borderRadius: 999 }}>{getDocTypeLabel(value)}</Tag>
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              {value}
-            </Text>
+          <div className="types-type-cell">
+            <Tag className="types-type-tag">{getDocTypeLabel(value)}</Tag>
+            {!isMobile && (
+              <Text type="secondary" className="types-type-raw">
+                {value}
+              </Text>
+            )}
           </div>
         ),
       },
       {
-        title: "Documents",
+        title: isMobile ? "Docs" : "Documents",
         dataIndex: "count",
         key: "count",
-        width: 120,
+        width: isMobile ? 88 : 120,
       },
       {
         title: "Action",
         key: "action",
-        width: 140,
+        width: isMobile ? 104 : 140,
         render: (_: unknown, row: DocTypeRow) => (
-          <Button icon={<EditOutlined />} size="small" onClick={() => openRename(row)}>
-            Rename
+          <Button
+            icon={<EditOutlined />}
+            size="small"
+            disabled={row.count === 0}
+            onClick={() => openRename(row)}
+          >
+            {isMobile ? "Edit" : "Rename"}
           </Button>
         ),
       },
     ],
-    []
+    [isMobile]
   );
 
   return (
@@ -128,9 +149,10 @@ export default function DocumentTypesPage() {
           className="types-table"
           rowKey="doc_type"
           columns={columns}
-          dataSource={rows}
+          dataSource={tableRows}
           loading={loading}
           pagination={false}
+          size={isMobile ? "small" : "middle"}
         />
       </Card>
 

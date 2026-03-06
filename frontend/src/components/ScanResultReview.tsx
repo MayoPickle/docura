@@ -1,4 +1,4 @@
-import { Form, Input, Select, Button, Typography } from "antd";
+import { Form, Input, AutoComplete, Button, Typography } from "antd";
 import { CheckCircleOutlined } from "@ant-design/icons";
 import type { ScanResult, DocType, KnownDocType } from "../types";
 import { DOC_TYPE_LABELS, DOC_TYPE_FIELDS, getDocTypeLabel, toFieldLabel } from "../types";
@@ -90,7 +90,18 @@ export default function ScanResultReview({
           label="Document Type"
           rules={[{ required: true }]}
         >
-          <Select options={docTypeOptions} />
+          <AutoComplete
+            options={docTypeOptions}
+            filterOption={(inputValue, option) =>
+              String(option?.label || "")
+                .toLowerCase()
+                .includes(inputValue.toLowerCase()) ||
+              String(option?.value || "")
+                .toLowerCase()
+                .includes(inputValue.toLowerCase())
+            }
+            placeholder="Select or type a document type"
+          />
         </Form.Item>
 
         <div className="field-group">

@@ -34,16 +34,16 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   other: <FileOutlined />,
 };
 
-const GRADIENT_MAP: Record<string, string> = {
-  credit_card: "linear-gradient(135deg, #3b82f6, #60a5fa)",
-  passport: "linear-gradient(135deg, #334155, #475569)",
-  visa: "linear-gradient(135deg, #06b6d4, #3b82f6)",
-  diploma: "linear-gradient(135deg, #f59e0b, #ef4444)",
-  id_card: "linear-gradient(135deg, #ec4899, #f472b6)",
-  driver_license: "linear-gradient(135deg, #10b981, #06b6d4)",
-  i20: "linear-gradient(135deg, #8b5cf6, #6366f1)",
-  i797: "linear-gradient(135deg, #f97316, #ea580c)",
-  other: "linear-gradient(135deg, #6b7280, #9ca3af)",
+const COLOR_MAP: Record<string, { bg: string; fg: string }> = {
+  credit_card: { bg: "#eff6ff", fg: "#3b82f6" },
+  passport: { bg: "#f1f5f9", fg: "#64748b" },
+  visa: { bg: "#ecfeff", fg: "#0891b2" },
+  diploma: { bg: "#fffbeb", fg: "#d97706" },
+  id_card: { bg: "#fdf2f8", fg: "#db2777" },
+  driver_license: { bg: "#ecfdf5", fg: "#059669" },
+  i20: { bg: "#f5f3ff", fg: "#7c3aed" },
+  i797: { bg: "#fff7ed", fg: "#ea580c" },
+  other: { bg: "#f3f4f6", fg: "#6b7280" },
 };
 
 export default function DashboardPage() {
@@ -114,34 +114,30 @@ export default function DashboardPage() {
         </Button>
       </div>
 
-      <Row gutter={[12, 12]}>
-        {types.map((t) => (
-          <Col xs={12} sm={8} md={8} lg={6} key={t}>
-            <div
-              className="stat-card"
-              onClick={() => navigate(`/documents?type=${t}`)}
-            >
+      <Row gutter={[10, 10]}>
+        {types.map((t) => {
+          const colors = COLOR_MAP[t] || COLOR_MAP.other;
+          const count = summary?.by_type[t] || 0;
+          return (
+            <Col xs={12} sm={8} md={8} lg={6} key={t}>
               <div
-                className="stat-card-icon"
-                style={{ background: GRADIENT_MAP[t] || GRADIENT_MAP.other }}
+                className="stat-card"
+                onClick={() => navigate(`/documents?type=${t}`)}
               >
-                {ICON_MAP[t] || ICON_MAP.other}
+                <div className="stat-card-row">
+                  <span
+                    className="stat-card-icon"
+                    style={{ background: colors.bg, color: colors.fg }}
+                  >
+                    {ICON_MAP[t] || ICON_MAP.other}
+                  </span>
+                  <span className="stat-card-count">{count}</span>
+                </div>
+                <Text className="stat-card-label">{getDocTypeLabel(t)}</Text>
               </div>
-              <Text
-                type="secondary"
-                style={{ fontSize: 12, display: "block", marginBottom: 2 }}
-              >
-                {getDocTypeLabel(t)}
-              </Text>
-              <Text
-                strong
-                style={{ fontSize: 24, lineHeight: 1.2, letterSpacing: -0.5 }}
-              >
-                {summary?.by_type[t] || 0}
-              </Text>
-            </div>
-          </Col>
-        ))}
+            </Col>
+          );
+        })}
       </Row>
     </div>
   );
