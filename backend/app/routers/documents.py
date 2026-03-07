@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, update
+from sqlalchemy import select, func, update, or_
 from sqlalchemy.orm import selectinload
 from typing import Optional
 import re
@@ -26,15 +26,41 @@ def _sanitize_doc_type(raw: str, lowercase: bool = True) -> str:
     return cleaned.lower() if lowercase else cleaned
 
 
+def _to_ilike_pattern(raw: str) -> str | None:
+    normalized = raw.strip()
+    if not normalized:
+        return None
+    escaped = normalized.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return f"%{escaped}%"
+
+
 @router.get("", response_model=list[DocumentListResponse])
 async def list_documents(
     doc_type: Optional[str] = Query(None),
+    q: Optional[str] = Query(None, description="Search in title, notes, extracted fields, and filenames"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     query = select(Document).where(Document.user_id == current_user.id)
     if doc_type:
         query = query.where(Document.doc_type == doc_type)
+
+    keyword = _to_ilike_pattern(q) if q else None
+    if keyword:
+        file_name_exists = (
+            select(File.id)
+            .where(File.document_id == Document.id, File.filename.ilike(keyword, escape="\\"))
+            .exists()
+        )
+        query = query.where(
+            or_(
+                Document.title.ilike(keyword, escape="\\"),
+                Document.notes.ilike(keyword, escape="\\"),
+                Document.fields_json.ilike(keyword, escape="\\"),
+                file_name_exists,
+            )
+        )
+
     query = query.order_by(Document.updated_at.desc())
 
     result = await db.execute(query.options(selectinload(Document.files)))

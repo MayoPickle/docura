@@ -16,24 +16,31 @@ export default function DocumentListPage() {
   const [docs, setDocs] = useState<DocumentListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
   const activeType = searchParams.get("type") || "all";
 
   useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search.trim()), 250);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
     setLoading(true);
-    const params = activeType !== "all" ? { doc_type: activeType } : {};
+    const params: Record<string, string> = {};
+    if (activeType !== "all") {
+      params.doc_type = activeType;
+    }
+    if (debouncedSearch) {
+      params.q = debouncedSearch;
+    }
+
     api
       .get("/documents", { params })
       .then((res) => setDocs(res.data))
       .catch(() => message.error("Failed to load documents"))
       .finally(() => setLoading(false));
-  }, [activeType, message]);
-
-  const filtered = search
-    ? docs.filter((d) =>
-        d.title.toLowerCase().includes(search.toLowerCase())
-      )
-    : docs;
+  }, [activeType, debouncedSearch, message]);
 
   const filterOptions = useMemo(() => {
     const known = Object.entries(DOC_TYPE_LABELS).map(([value, label]) => ({
@@ -104,7 +111,7 @@ export default function DocumentListPage() {
         <div className="empty-state">
           <Spin size="large" />
         </div>
-      ) : filtered.length === 0 ? (
+      ) : docs.length === 0 ? (
         <div className="empty-state">
           <div className="empty-state-icon">
             <FileTextOutlined />
@@ -134,7 +141,7 @@ export default function DocumentListPage() {
         </div>
       ) : (
         <Row gutter={[12, 12]}>
-          {filtered.map((doc) => (
+          {docs.map((doc) => (
             <Col xs={24} sm={12} key={doc.id}>
               <DocumentCard
                 doc={doc}
