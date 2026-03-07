@@ -1,34 +1,14 @@
 import { Tag, Typography } from "antd";
 import {
-  CreditCardOutlined,
-  BookOutlined,
-  GlobalOutlined,
-  TrophyOutlined,
-  IdcardOutlined,
-  CarOutlined,
-  FileTextOutlined,
-  ProfileOutlined,
-  FileOutlined,
   PaperClipOutlined,
   ClockCircleOutlined,
 } from "@ant-design/icons";
 import type { DocumentListItem } from "../types";
 import { getDocTypeLabel } from "../types";
+import { getDocTypeIcon } from "../constants/docTypeIcons";
 import dayjs from "dayjs";
 
 const { Text } = Typography;
-
-const ICON_MAP: Record<string, React.ReactNode> = {
-  credit_card: <CreditCardOutlined />,
-  passport: <BookOutlined />,
-  visa: <GlobalOutlined />,
-  diploma: <TrophyOutlined />,
-  id_card: <IdcardOutlined />,
-  driver_license: <CarOutlined />,
-  i20: <FileTextOutlined />,
-  i797: <ProfileOutlined />,
-  other: <FileOutlined />,
-};
 
 const COLOR_MAP: Record<string, string> = {
   credit_card: "blue",
@@ -65,9 +45,12 @@ export default function DocumentCard({ doc, onClick }: Props) {
       <div className="doc-card-head">
         <div
           className="doc-card-icon"
-          style={{ background: BG_MAP[doc.doc_type] || BG_MAP.other }}
+          style={{
+            background: doc.doc_type_icon_bg || BG_MAP[doc.doc_type] || BG_MAP.other,
+            color: doc.doc_type_icon_fg || "#fff",
+          }}
         >
-          {ICON_MAP[doc.doc_type]}
+          {getDocTypeIcon(doc.doc_type_icon_key, doc.doc_type)}
         </div>
         <div className="doc-card-content">
           <Text className="doc-card-title" strong ellipsis>

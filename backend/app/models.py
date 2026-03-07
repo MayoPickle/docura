@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 
@@ -15,6 +15,11 @@ class User(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     documents = relationship("Document", back_populates="owner", cascade="all, delete-orphan")
+    doc_type_preferences = relationship(
+        "DocumentTypePreference",
+        back_populates="owner",
+        cascade="all, delete-orphan",
+    )
 
 
 class Document(Base):
@@ -44,3 +49,20 @@ class File(Base):
     uploaded_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     document = relationship("Document", back_populates="files")
+
+
+class DocumentTypePreference(Base):
+    __tablename__ = "document_type_preferences"
+    __table_args__ = (
+        UniqueConstraint("user_id", "doc_type_norm", name="uq_doc_type_pref_user_type"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    doc_type_norm = Column(String(50), nullable=False, index=True)
+    icon_key = Column(String(50), nullable=False)
+    icon_bg = Column(String(16), nullable=True)
+    icon_fg = Column(String(16), nullable=True)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    owner = relationship("User", back_populates="doc_type_preferences")

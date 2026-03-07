@@ -6,6 +6,7 @@ import api from "../api/client";
 import type { DocumentListItem } from "../types";
 import { DOC_TYPE_LABELS, getDocTypeLabel } from "../types";
 import DocumentCard from "../components/DocumentCard";
+import { defaultDocTypeIconKey, getDocTypeIcon } from "../constants/docTypeIcons";
 
 const { Title } = Typography;
 
@@ -14,6 +15,15 @@ export default function DocumentListPage() {
   const { message } = App.useApp();
   const [searchParams, setSearchParams] = useSearchParams();
   const [docs, setDocs] = useState<DocumentListItem[]>([]);
+  const [typeRows, setTypeRows] = useState<
+    Array<{
+      doc_type: string;
+      count: number;
+      icon_key?: string | null;
+      icon_bg?: string | null;
+      icon_fg?: string | null;
+    }>
+  >([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -24,6 +34,15 @@ export default function DocumentListPage() {
     const timer = setTimeout(() => setDebouncedSearch(search.trim()), 250);
     return () => clearTimeout(timer);
   }, [search]);
+
+  useEffect(() => {
+    api
+      .get("/documents/types")
+      .then((res) => setTypeRows(res.data || []))
+      .catch(() => {
+        /* ignore type metadata failure */
+      });
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -43,21 +62,29 @@ export default function DocumentListPage() {
   }, [activeType, debouncedSearch, message]);
 
   const filterOptions = useMemo(() => {
+    const typeMetaMap = new Map(typeRows.map((row) => [row.doc_type, row]));
     const known = Object.entries(DOC_TYPE_LABELS).map(([value, label]) => ({
       value,
       label,
+      icon_key: typeMetaMap.get(value)?.icon_key || defaultDocTypeIconKey(value),
+      icon_bg: typeMetaMap.get(value)?.icon_bg || null,
+      icon_fg: typeMetaMap.get(value)?.icon_fg || null,
     }));
     const knownSet = new Set(known.map((item) => item.value));
-    const dynamic = Array.from(new Set(docs.map((d) => d.doc_type)))
-      .filter((type) => !knownSet.has(type))
+    const dynamic = typeRows
+      .filter((row) => !knownSet.has(row.doc_type) && row.count > 0)
+      .map((row) => row.doc_type)
       .sort()
       .map((value) => ({
         value,
         label: getDocTypeLabel(value),
+        icon_key: typeMetaMap.get(value)?.icon_key || defaultDocTypeIconKey(value),
+        icon_bg: typeMetaMap.get(value)?.icon_bg || null,
+        icon_fg: typeMetaMap.get(value)?.icon_fg || null,
       }));
 
-    return [{ label: "All", value: "all" }, ...known, ...dynamic];
-  }, [docs]);
+    return [{ label: "All", value: "all", icon_key: "other", icon_bg: null, icon_fg: null }, ...known, ...dynamic];
+  }, [typeRows]);
 
   return (
     <div className="page-shell">
@@ -102,6 +129,17 @@ export default function DocumentListPage() {
               }
             }}
           >
+            <span className="filter-pill-icon">
+              <span
+                className="filter-pill-icon-badge"
+                style={{
+                  background: opt.icon_bg || undefined,
+                  color: opt.icon_fg || undefined,
+                }}
+              >
+                {getDocTypeIcon(opt.icon_key, opt.value)}
+              </span>
+            </span>
             {opt.label}
           </div>
         ))}

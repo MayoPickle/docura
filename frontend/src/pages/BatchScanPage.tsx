@@ -54,9 +54,13 @@ function isSupportedFile(file: File) {
   return (
     file.type.startsWith("image/") ||
     file.type === "application/pdf" ||
+    file.type === "application/msword" ||
+    file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
     file.type.startsWith("text/") ||
     name.endsWith(".pdf") ||
-    name.endsWith(".txt")
+    name.endsWith(".txt") ||
+    name.endsWith(".doc") ||
+    name.endsWith(".docx")
   );
 }
 
@@ -113,7 +117,7 @@ export default function BatchScanPage() {
       const valid = incoming.filter(isSupportedFile);
       if (valid.length < incoming.length) {
         message.warning(
-          "Some files were skipped — only image, PDF, and text supported.",
+          "Some files were skipped — only image, PDF, text, and Word supported.",
         );
       }
       setItems((prev) => {
@@ -301,7 +305,7 @@ export default function BatchScanPage() {
       {!scanning && !inReview && !allFinished && (
         <div className="scan-zone-wrap">
           <Upload
-            accept="image/*,application/pdf,text/plain,.pdf,.txt"
+            accept="image/*,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.pdf,.txt,.doc,.docx"
             multiple
             showUploadList={false}
             beforeUpload={(file) => {
@@ -411,17 +415,21 @@ export default function BatchScanPage() {
                     )}
 
                     <div className="batch-review-actions">
-                      <Button size="small" onClick={() => skipItem(index)}>
+                      <button
+                        type="button"
+                        className="batch-review-action-btn"
+                        onClick={() => skipItem(index)}
+                      >
                         Skip
-                      </Button>
-                      <Button
-                        size="small"
-                        type="primary"
-                        icon={<SaveOutlined />}
+                      </button>
+                      <button
+                        type="button"
+                        className="batch-review-action-btn batch-review-action-primary"
                         onClick={() => saveItem(index)}
                       >
+                        <SaveOutlined />
                         Save
-                      </Button>
+                      </button>
                     </div>
                   </div>
                 );

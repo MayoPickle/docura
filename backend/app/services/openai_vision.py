@@ -171,7 +171,7 @@ async def recognize_with_openai_files(
     user_text = [
         "Please analyze these document file(s) as one logical document and extract the information.",
         f"Total files: {len(files)}.",
-        "Files may include images, PDFs, or text documents.",
+        "Files may include images, PDFs, text documents, or Word documents.",
     ]
     if doc_type_hint:
         user_text.append(

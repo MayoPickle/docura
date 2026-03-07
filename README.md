@@ -15,7 +15,7 @@ A mobile-first personal document management web app. Store and organize your cre
 - Mobile-first responsive design (bottom tabs on mobile, sidebar on desktop)
 - Document CRUD with type-specific structured fields
 - File attachments with upload/download
-- Smart Scan: upload image/PDF/text files and AI automatically classifies and extracts fields
+- Smart Scan: upload image/PDF/text/Word files and AI automatically classifies and extracts fields
 - Smart Scan supports AI-generated categories and dynamic fields for uncommon documents (e.g. LCA)
 - Dashboard with document summary by type
 

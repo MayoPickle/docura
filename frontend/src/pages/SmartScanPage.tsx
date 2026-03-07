@@ -35,7 +35,7 @@ const STEPS = [
   { num: 3, label: "Save" },
 ];
 
-const FORMAT_CHIPS = ["JPG", "PNG", "PDF", "TXT"];
+const FORMAT_CHIPS = ["JPG", "PNG", "PDF", "TXT", "DOC", "DOCX"];
 
 type ScanDuplicateItem = {
   filename: string;
@@ -63,9 +63,13 @@ function isSupportedScanFile(file: File) {
   return (
     file.type.startsWith("image/") ||
     file.type === "application/pdf" ||
+    file.type === "application/msword" ||
+    file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
     file.type.startsWith("text/") ||
     name.endsWith(".pdf") ||
-    name.endsWith(".txt")
+    name.endsWith(".txt") ||
+    name.endsWith(".doc") ||
+    name.endsWith(".docx")
   );
 }
 
@@ -111,7 +115,7 @@ export default function SmartScanPage() {
 
     const valid = incoming.filter(isSupportedScanFile);
     if (valid.length < incoming.length) {
-      message.warning("Some files were skipped. Only image, PDF, and text files are supported.");
+      message.warning("Some files were skipped. Only image, PDF, text, and Word files are supported.");
     }
 
     setScanFiles((prev) => {
@@ -310,7 +314,7 @@ export default function SmartScanPage() {
       {!scanResult && !scanning && (
         <div className="scan-zone-wrap">
           <Upload
-            accept="image/*,application/pdf,text/plain,.pdf,.txt"
+            accept="image/*,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.pdf,.txt,.doc,.docx"
             multiple
             showUploadList={false}
             beforeUpload={(file) => {

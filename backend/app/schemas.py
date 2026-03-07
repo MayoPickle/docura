@@ -73,6 +73,9 @@ class DocumentResponse(BaseModel):
     doc_type: str
     fields_json: str
     notes: str
+    doc_type_icon_key: Optional[str] = None
+    doc_type_icon_bg: Optional[str] = None
+    doc_type_icon_fg: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     files: list[FileResponse] = []
@@ -86,6 +89,9 @@ class DocumentListResponse(BaseModel):
     title: str
     doc_type: str
     notes: str
+    doc_type_icon_key: Optional[str] = None
+    doc_type_icon_bg: Optional[str] = None
+    doc_type_icon_fg: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     file_count: int = 0
@@ -96,16 +102,25 @@ class DocumentListResponse(BaseModel):
 class DocumentTypeCount(BaseModel):
     doc_type: str
     count: int
+    icon_key: Optional[str] = None
+    icon_bg: Optional[str] = None
+    icon_fg: Optional[str] = None
 
 
 class RenameDocTypeRequest(BaseModel):
     from_type: str
     to_type: str
+    icon_key: Optional[str] = None
+    icon_bg: Optional[str] = None
+    icon_fg: Optional[str] = None
 
 
 class RenameDocTypeResponse(BaseModel):
     from_type: str
     to_type: str
+    icon_key: Optional[str] = None
+    icon_bg: Optional[str] = None
+    icon_fg: Optional[str] = None
     updated_count: int
 
 

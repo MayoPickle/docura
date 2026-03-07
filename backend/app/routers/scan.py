@@ -20,6 +20,14 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 SUPPORTED_SCAN_MIME_TYPES = {
     "application/pdf",
     "text/plain",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+}
+SUPPORTED_SCAN_EXTENSIONS = {
+    ".pdf",
+    ".txt",
+    ".doc",
+    ".docx",
 }
 
 
@@ -91,7 +99,7 @@ async def _read_scan_files(
         if not _is_supported_scan_type(uploaded.content_type, uploaded.filename):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Only image, PDF, or plain text files are supported",
+                detail="Only image, PDF, plain text, or Word files are supported",
             )
 
         file_bytes = await uploaded.read()
@@ -104,10 +112,14 @@ async def _read_scan_files(
 
 def _resolve_scan_content_type(content_type: str | None, filename: str | None) -> str:
     normalized_type = (content_type or "").lower()
-    if normalized_type:
+    if normalized_type and normalized_type != "application/octet-stream":
         return normalized_type
 
     normalized_name = (filename or "").lower()
+    if normalized_name.endswith(".docx"):
+        return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    if normalized_name.endswith(".doc"):
+        return "application/msword"
     if normalized_name.endswith(".pdf"):
         return "application/pdf"
     if normalized_name.endswith(".txt"):
@@ -121,9 +133,7 @@ def _is_supported_scan_type(content_type: str | None, filename: str | None) -> b
         return True
 
     normalized_name = (filename or "").lower()
-    if normalized_name.endswith(".pdf") or normalized_name.endswith(".txt"):
-        return True
-    return False
+    return any(normalized_name.endswith(ext) for ext in SUPPORTED_SCAN_EXTENSIONS)
 
 
 @router.post("/{document_id}/files", response_model=FileResponse, status_code=status.HTTP_201_CREATED)

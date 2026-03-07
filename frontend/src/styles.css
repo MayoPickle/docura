@@ -639,6 +639,9 @@ a {
   border: 1px solid var(--line);
   background: #fff;
   color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 12px;
   font-weight: 700;
   padding: 8px 14px;
@@ -651,6 +654,22 @@ a {
   color: #fff;
   background: var(--brand);
   border-color: var(--brand);
+}
+
+.filter-pill-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+
+.filter-pill-icon-badge {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .empty-state {
@@ -780,6 +799,12 @@ a {
 .doc-type-tag-icon {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(15, 118, 110, 0.12);
+  color: var(--brand-strong);
 }
 
 .doc-fields-grid {
@@ -1338,8 +1363,8 @@ a {
 .batch-list {
   display: grid;
   gap: 6px;
-  max-height: 420px;
-  overflow-y: auto;
+  max-height: none;
+  overflow: visible;
 }
 
 .batch-row {
@@ -1504,6 +1529,41 @@ a {
   background: rgba(0, 0, 0, 0.015);
 }
 
+.batch-review-action-btn {
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line-strong);
+  background: #fff;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.batch-review-action-btn:hover {
+  border-color: var(--brand);
+  color: var(--brand-strong);
+  background: var(--brand-faint);
+}
+
+.batch-review-action-primary {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: #fff;
+}
+
+.batch-review-action-primary:hover {
+  border-color: var(--brand-strong);
+  background: var(--brand-strong);
+  color: #fff;
+}
+
 .batch-row-status-scanned {
   color: var(--brand);
 }
@@ -1633,6 +1693,29 @@ a {
   gap: 8px;
 }
 
+.types-type-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.65);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.types-type-icon-badge {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.65);
+  color: var(--brand-strong);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .types-type-tag.ant-tag {
   margin: 0;
   border-radius: 999px;
@@ -1645,6 +1728,24 @@ a {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.types-icon-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.types-icon-option-mark {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  color: var(--brand-strong);
+  background: rgba(255, 255, 255, 0.6);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 @media (max-width: 639px) {

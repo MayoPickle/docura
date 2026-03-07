@@ -15,43 +15,24 @@ import {
 import {
   EditOutlined,
   DeleteOutlined,
-  UploadOutlined,
   DownloadOutlined,
   ArrowLeftOutlined,
   PaperClipOutlined,
   CalendarOutlined,
   EyeOutlined,
   FileImageOutlined,
-  FilePdfOutlined,
-  CreditCardOutlined,
-  BookOutlined,
-  GlobalOutlined,
-  TrophyOutlined,
-  IdcardOutlined,
-  CarOutlined,
-  FileTextOutlined,
-  ProfileOutlined,
   FileOutlined,
+  FilePdfOutlined,
+  UploadOutlined,
 } from "@ant-design/icons";
 import type { UploadProps } from "antd";
 import api from "../api/client";
 import type { Document, KnownDocType } from "../types";
 import { DOC_TYPE_FIELDS, getDocTypeLabel, toFieldLabel } from "../types";
+import { getDocTypeIcon } from "../constants/docTypeIcons";
 import dayjs from "dayjs";
 
 const { Title, Text } = Typography;
-
-const DOC_TYPE_ICON_MAP: Record<string, React.ReactNode> = {
-  credit_card: <CreditCardOutlined />,
-  passport: <BookOutlined />,
-  visa: <GlobalOutlined />,
-  diploma: <TrophyOutlined />,
-  id_card: <IdcardOutlined />,
-  driver_license: <CarOutlined />,
-  i20: <FileTextOutlined />,
-  i797: <ProfileOutlined />,
-  other: <FileOutlined />,
-};
 
 function isImage(contentType: string) {
   return contentType.startsWith("image/");
@@ -230,8 +211,14 @@ export default function DocumentDetailPage() {
               {doc.title}
             </Title>
             <Tag className="doc-type-tag">
-              <span className="doc-type-tag-icon">
-                {DOC_TYPE_ICON_MAP[doc.doc_type] || <FileOutlined />}
+              <span
+                className="doc-type-tag-icon"
+                style={{
+                  background: doc.doc_type_icon_bg || undefined,
+                  color: doc.doc_type_icon_fg || undefined,
+                }}
+              >
+                {getDocTypeIcon(doc.doc_type_icon_key, doc.doc_type)}
               </span>
               {getDocTypeLabel(doc.doc_type)}
             </Tag>

@@ -2,37 +2,24 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Row, Col, Typography, Button, Spin, App } from "antd";
 import {
-  CreditCardOutlined,
-  BookOutlined,
-  GlobalOutlined,
-  TrophyOutlined,
-  IdcardOutlined,
-  CarOutlined,
-  FileTextOutlined,
-  ProfileOutlined,
-  FileOutlined,
   ScanOutlined,
   PlusOutlined,
   RightOutlined,
 } from "@ant-design/icons";
 import api from "../api/client";
-import type { DocumentSummary } from "../types";
 import { DOC_TYPE_LABELS, getDocTypeLabel } from "../types";
+import { getDocTypeIcon } from "../constants/docTypeIcons";
 import { useAuth } from "../contexts/AuthContext";
 
 const { Title, Text } = Typography;
 
-const ICON_MAP: Record<string, React.ReactNode> = {
-  credit_card: <CreditCardOutlined />,
-  passport: <BookOutlined />,
-  visa: <GlobalOutlined />,
-  diploma: <TrophyOutlined />,
-  id_card: <IdcardOutlined />,
-  driver_license: <CarOutlined />,
-  i20: <FileTextOutlined />,
-  i797: <ProfileOutlined />,
-  other: <FileOutlined />,
-};
+interface DocTypeRow {
+  doc_type: string;
+  count: number;
+  icon_key?: string | null;
+  icon_bg?: string | null;
+  icon_fg?: string | null;
+}
 
 const COLOR_MAP: Record<string, { bg: string; fg: string }> = {
   credit_card: { bg: "#eff6ff", fg: "#3b82f6" },
@@ -50,14 +37,14 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { message } = App.useApp();
-  const [summary, setSummary] = useState<DocumentSummary | null>(null);
+  const [rows, setRows] = useState<DocTypeRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     api
-      .get("/documents/summary")
-      .then((res) => setSummary(res.data))
-      .catch(() => message.error("Failed to load summary"))
+      .get("/documents/types")
+      .then((res) => setRows(res.data || []))
+      .catch(() => message.error("Failed to load categories"))
       .finally(() => setLoading(false));
   }, [message]);
 
@@ -70,10 +57,12 @@ export default function DashboardPage() {
   }
 
   const knownTypes = Object.keys(DOC_TYPE_LABELS);
-  const dynamicTypes = Object.keys(summary?.by_type || {}).filter(
-    (key) => !knownTypes.includes(key)
-  );
+  const rowMap = new Map(rows.map((row) => [row.doc_type, row]));
+  const dynamicTypes = rows
+    .filter((row) => !knownTypes.includes(row.doc_type) && row.count > 0)
+    .map((row) => row.doc_type);
   const types = [...knownTypes, ...dynamicTypes];
+  const total = rows.reduce((sum, row) => sum + row.count, 0);
 
   return (
     <div className="page-shell">
@@ -83,7 +72,7 @@ export default function DashboardPage() {
             Hi, {user?.name || "there"}
           </Title>
           <p className="hero-copy">
-            You have <strong>{summary?.total || 0}</strong> documents stored
+            You have <strong>{total}</strong> documents stored
             securely.
           </p>
           <div className="hero-actions">
@@ -116,8 +105,9 @@ export default function DashboardPage() {
 
       <Row gutter={[10, 10]}>
         {types.map((t) => {
+          const row = rowMap.get(t);
           const colors = COLOR_MAP[t] || COLOR_MAP.other;
-          const count = summary?.by_type[t] || 0;
+          const count = row?.count || 0;
           return (
             <Col xs={12} sm={8} md={8} lg={6} key={t}>
               <div
@@ -127,9 +117,12 @@ export default function DashboardPage() {
                 <div className="stat-card-row">
                   <span
                     className="stat-card-icon"
-                    style={{ background: colors.bg, color: colors.fg }}
+                    style={{
+                      background: row?.icon_bg || colors.bg,
+                      color: row?.icon_fg || colors.fg,
+                    }}
                   >
-                    {ICON_MAP[t] || ICON_MAP.other}
+                    {getDocTypeIcon(row?.icon_key, t)}
                   </span>
                   <span className="stat-card-count">{count}</span>
                 </div>

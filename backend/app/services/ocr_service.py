@@ -13,6 +13,10 @@ SUPPORTED_DOC_TYPES = {
     "i797",
     "other",
 }
+WORD_DOC_MIME_TYPES = {
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+}
 
 
 def _extract_text_from_pdf(pdf_bytes: bytes) -> str:
@@ -63,6 +67,19 @@ def _build_text_scan_result(text: str, doc_type_hint: str | None = None) -> Scan
         title="Scanned Document",
         fields={"raw_text": text[:4000]},
         confidence=0.3 if normalized_hint else 0.2,
+        method="text-extract",
+    )
+
+
+def _build_word_requires_openai_result(doc_type_hint: str | None = None) -> ScanResult:
+    normalized_hint = _normalize_doc_type_hint(doc_type_hint)
+    return ScanResult(
+        doc_type=normalized_hint or "other",
+        title="Word Document",
+        fields={
+            "description": "Word (.doc/.docx) scanning requires OPENAI_API_KEY in this backend configuration."
+        },
+        confidence=0.1,
         method="text-extract",
     )
 
@@ -143,10 +160,14 @@ async def recognize_documents(
 ) -> ScanResult:
     image_files: list[tuple[bytes, str, str | None]] = []
     text_parts: list[str] = []
+    has_word_docs = False
 
     for file_bytes, content_type, filename in files:
         if content_type.startswith("image/"):
             image_files.append((file_bytes, content_type, filename))
+            continue
+        if content_type in WORD_DOC_MIME_TYPES:
+            has_word_docs = True
             continue
         if content_type == "application/pdf":
             extracted = _extract_text_from_pdf(file_bytes)
@@ -177,6 +198,9 @@ async def recognize_documents(
 
     if combined_text:
         results.append(_build_text_scan_result(combined_text, doc_type_hint=doc_type_hint))
+
+    if not results and has_word_docs:
+        return _build_word_requires_openai_result(doc_type_hint=doc_type_hint)
 
     if not results:
         return _build_text_scan_result("", doc_type_hint=doc_type_hint)

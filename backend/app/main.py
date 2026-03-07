@@ -42,5 +42,11 @@ async def health():
     return {
         "status": "ok",
         "python": f"{sys.version_info.major}.{sys.version_info.minor}",
-        "scan_supports": ["image/*", "application/pdf", "text/plain"],
+        "scan_supports": [
+            "image/*",
+            "application/pdf",
+            "text/plain",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ],
     }

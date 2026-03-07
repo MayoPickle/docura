@@ -23,6 +23,9 @@ export interface Document {
   user_id: number;
   title: string;
   doc_type: DocType;
+  doc_type_icon_key?: string | null;
+  doc_type_icon_bg?: string | null;
+  doc_type_icon_fg?: string | null;
   fields_json: string;
   notes: string;
   created_at: string;
@@ -35,6 +38,9 @@ export interface DocumentListItem {
   user_id: number;
   title: string;
   doc_type: DocType;
+  doc_type_icon_key?: string | null;
+  doc_type_icon_bg?: string | null;
+  doc_type_icon_fg?: string | null;
   notes: string;
   created_at: string;
   updated_at: string;
