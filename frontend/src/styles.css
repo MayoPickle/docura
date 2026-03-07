@@ -1296,14 +1296,14 @@ a {
 }
 
 .batch-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  display: grid;
+  gap: 6px;
   max-height: 420px;
   overflow-y: auto;
 }
 
 .batch-row {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1390,6 +1390,8 @@ a {
 }
 
 .batch-review-card {
+  flex-shrink: 0;
+  position: relative;
   border-radius: var(--radius-xs);
   border: 1px solid rgba(15, 118, 110, 0.2);
   background: var(--bg-elevated);
@@ -1428,6 +1430,9 @@ a {
   border-top: 1px solid var(--line);
   margin: 0 12px;
   padding-top: 10px;
+  max-height: 180px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .batch-field {
@@ -1449,6 +1454,8 @@ a {
 }
 
 .batch-review-actions {
+  position: relative;
+  z-index: 1;
   display: flex;
   justify-content: flex-end;
   gap: 8px;

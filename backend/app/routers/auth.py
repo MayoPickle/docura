@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 
 from ..database import get_db
 from ..models import User
@@ -13,15 +13,18 @@ router = APIRouter()
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register(data: UserCreate, db: AsyncSession = Depends(get_db)):
+    normalized_email = data.email
     existing = await db.execute(
-        select(User).where(User.email == data.email)
+        select(User)
+        .where(func.lower(User.email) == normalized_email)
+        .limit(1)
     )
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already exists")
 
     user = User(
         name=data.name,
-        email=data.email,
+        email=normalized_email,
         hashed_password=hash_password(data.password),
     )
     db.add(user)
@@ -32,7 +35,13 @@ async def register(data: UserCreate, db: AsyncSession = Depends(get_db)):
 
 @router.post("/login", response_model=Token)
 async def login(data: UserLogin, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(User).where(User.email == data.email))
+    normalized_email = data.email
+    result = await db.execute(
+        select(User)
+        .where(func.lower(User.email) == normalized_email)
+        .order_by(User.id.asc())
+        .limit(1)
+    )
     user = result.scalar_one_or_none()
 
     if not user or not verify_password(data.password, user.hashed_password):

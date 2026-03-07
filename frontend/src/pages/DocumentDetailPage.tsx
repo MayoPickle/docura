@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   Typography,
   Card,
@@ -74,12 +74,19 @@ function fileUrl(fileId: number, download = false) {
   return `/api/files/${fileId}?${params.toString()}`;
 }
 
+interface DetailNavState {
+  source?: "batch-scan";
+}
+
 export default function DocumentDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { message, modal } = App.useApp();
   const [doc, setDoc] = useState<Document | null>(null);
   const [loading, setLoading] = useState(true);
+  const navState = (location.state as DetailNavState | null) ?? null;
+  const fromBatchScan = navState?.source === "batch-scan";
 
   const fetchDoc = () => {
     setLoading(true);
@@ -104,9 +111,26 @@ export default function DocumentDetailPage() {
       onOk: async () => {
         await api.delete(`/documents/${id}`);
         message.success("Document deleted");
-        navigate("/documents", { replace: true });
+        navigate(fromBatchScan ? "/scan/batch" : "/documents", { replace: true });
       },
     });
+  };
+
+  const handleBack = () => {
+    if (fromBatchScan) {
+      navigate("/scan/batch", { replace: true });
+      return;
+    }
+
+    const historyIndex =
+      typeof window.history.state?.idx === "number"
+        ? window.history.state.idx
+        : 0;
+    if (historyIndex > 0) {
+      navigate(-1);
+      return;
+    }
+    navigate("/documents", { replace: true });
   };
 
   const handleDeleteFile = async (fileId: number) => {
@@ -192,10 +216,10 @@ export default function DocumentDetailPage() {
       <Button
         type="text"
         icon={<ArrowLeftOutlined />}
-        onClick={() => navigate("/documents")}
+        onClick={handleBack}
         className="back-btn"
       >
-        Back to Documents
+        {fromBatchScan ? "Back to Batch Scan" : "Back to Documents"}
       </Button>
 
       <Card

@@ -36,12 +36,18 @@ type ItemStatus =
 
 interface BatchItem {
   file: File;
-  previewUrl: string;
   status: ItemStatus;
   scanResult?: ScanResult;
   docId?: number;
   error?: string;
 }
+
+interface BatchScanSession {
+  items: BatchItem[];
+  expandedIndex: number | null;
+}
+
+let batchScanSessionCache: BatchScanSession | null = null;
 
 function isSupportedFile(file: File) {
   const name = file.name.toLowerCase();
@@ -69,10 +75,14 @@ export default function BatchScanPage() {
   const { message } = App.useApp();
   const abortRef = useRef(false);
 
-  const [items, setItems] = useState<BatchItem[]>([]);
+  const [items, setItems] = useState<BatchItem[]>(
+    () => batchScanSessionCache?.items ?? [],
+  );
   const [scanning, setScanning] = useState(false);
   const [savingAll, setSavingAll] = useState(false);
-  const [expanded, setExpanded] = useState<Set<number>>(new Set());
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(
+    () => batchScanSessionCache?.expandedIndex ?? null,
+  );
 
   const scannedCount = items.filter(
     (i) => i.status !== "pending" && i.status !== "scanning",
@@ -92,12 +102,11 @@ export default function BatchScanPage() {
     items.some((i) => i.status === "scanned");
 
   useEffect(() => {
-    return () => {
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      items.forEach((i) => URL.revokeObjectURL(i.previewUrl));
+    batchScanSessionCache = {
+      items,
+      expandedIndex,
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [items, expandedIndex]);
 
   const addFiles = useCallback(
     (incoming: File[]) => {
@@ -123,7 +132,6 @@ export default function BatchScanPage() {
           ...prev,
           ...accepted.map((file) => ({
             file,
-            previewUrl: URL.createObjectURL(file),
             status: "pending" as const,
           })),
         ];
@@ -133,10 +141,11 @@ export default function BatchScanPage() {
   );
 
   const removeFile = (index: number) => {
-    setItems((prev) => {
-      const removed = prev[index];
-      if (removed) URL.revokeObjectURL(removed.previewUrl);
-      return prev.filter((_, i) => i !== index);
+    setItems((prev) => prev.filter((_, i) => i !== index));
+    setExpandedIndex((prev) => {
+      if (prev === null) return prev;
+      if (prev === index) return null;
+      return prev > index ? prev - 1 : prev;
     });
   };
 
@@ -147,12 +156,7 @@ export default function BatchScanPage() {
   };
 
   const toggleExpand = (index: number) => {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(index)) next.delete(index);
-      else next.add(index);
-      return next;
-    });
+    setExpandedIndex((prev) => (prev === index ? null : index));
   };
 
   // Phase 1: Scan all files (no save)
@@ -192,6 +196,7 @@ export default function BatchScanPage() {
     const item = items[index];
     if (!item.scanResult) return;
 
+    setExpandedIndex((prev) => (prev === index ? null : prev));
     updateItem(index, { status: "saving" });
 
     try {
@@ -230,13 +235,13 @@ export default function BatchScanPage() {
   };
 
   const skipItem = (index: number) => {
+    setExpandedIndex((prev) => (prev === index ? null : prev));
     updateItem(index, { status: "skipped" });
   };
 
   const handleReset = () => {
-    items.forEach((i) => URL.revokeObjectURL(i.previewUrl));
     setItems([]);
-    setExpanded(new Set());
+    setExpandedIndex(null);
   };
 
   const handleStop = () => {
@@ -353,7 +358,7 @@ export default function BatchScanPage() {
           <div className="batch-list">
             {items.map((item, index) => {
               const isScanned = item.status === "scanned";
-              const isExpanded = expanded.has(index);
+              const isExpanded = expandedIndex === index;
               const conf = item.scanResult
                 ? Math.round(item.scanResult.confidence * 100)
                 : 0;
@@ -466,7 +471,11 @@ export default function BatchScanPage() {
                   {item.status === "done" && item.docId && (
                     <button
                       className="batch-row-action"
-                      onClick={() => navigate(`/documents/${item.docId}`)}
+                      onClick={() =>
+                        navigate(`/documents/${item.docId}`, {
+                          state: { source: "batch-scan" },
+                        })
+                      }
                       title="View"
                     >
                       <EyeOutlined />

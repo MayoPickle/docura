@@ -19,6 +19,10 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+function normalizeEmail(email: string) {
+  return email.trim().toLowerCase();
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -44,14 +48,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [fetchUser]);
 
   const login = async (email: string, password: string) => {
-    const res = await api.post("/auth/login", { email, password });
+    const normalizedEmail = normalizeEmail(email);
+    const res = await api.post("/auth/login", {
+      email: normalizedEmail,
+      password,
+    });
     localStorage.setItem("token", res.data.access_token);
     await fetchUser();
   };
 
   const register = async (name: string, email: string, password: string) => {
-    await api.post("/auth/register", { name, email, password });
-    await login(email, password);
+    const normalizedEmail = normalizeEmail(email);
+    await api.post("/auth/register", {
+      name,
+      email: normalizedEmail,
+      password,
+    });
+    await login(normalizedEmail, password);
   };
 
   const logout = () => {

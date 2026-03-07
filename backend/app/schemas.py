@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 from datetime import datetime
 from typing import Optional
 
@@ -10,10 +10,20 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
 
+    @field_validator("email", mode="after")
+    @classmethod
+    def normalize_email(cls, value: EmailStr) -> str:
+        return str(value).strip().lower()
+
 
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
+    @field_validator("email", mode="after")
+    @classmethod
+    def normalize_email(cls, value: EmailStr) -> str:
+        return str(value).strip().lower()
 
 
 class UserResponse(BaseModel):
