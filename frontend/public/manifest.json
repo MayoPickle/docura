@@ -1,11 +1,13 @@
 {
+  "id": "/",
   "name": "Docura",
   "short_name": "Docura",
   "description": "Secure personal document management",
   "start_url": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#ffffff",
-  "theme_color": "#6366f1",
+  "theme_color": "#0f766e",
   "icons": [
     {
       "src": "/icon-192.png",
