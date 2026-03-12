@@ -1624,6 +1624,225 @@ a {
   color: #dc2626;
 }
 
+/* Scan-to-PDF */
+.spdf-capture-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.spdf-capture-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+}
+
+.spdf-capture-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 28px 12px;
+  border-radius: var(--radius-md);
+  border: 1.5px dashed var(--line-strong);
+  background: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+  transition: var(--transition-base);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.spdf-capture-btn .anticon {
+  font-size: 26px;
+  color: var(--brand);
+}
+
+.spdf-capture-btn:active {
+  border-color: var(--brand);
+  background: var(--brand-faint);
+}
+
+.spdf-pages-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.spdf-pages-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 10px;
+}
+
+.spdf-page-card {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  overflow: hidden;
+  transition: var(--transition-fast);
+}
+
+.spdf-page-card.spdf-page-dragging {
+  opacity: 0.5;
+  border-color: var(--brand);
+}
+
+.spdf-page-num {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  z-index: 2;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spdf-page-thumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  background: #f3f4f0;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.spdf-page-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.spdf-page-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0);
+  color: #fff;
+  font-size: 18px;
+  opacity: 0;
+  transition: var(--transition-fast);
+}
+
+.spdf-page-thumb:hover .spdf-page-overlay {
+  background: rgba(0, 0, 0, 0.3);
+  opacity: 1;
+}
+
+.spdf-page-actions {
+  display: flex;
+  justify-content: center;
+  padding: 4px;
+}
+
+.spdf-page-action-btn {
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-soft);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  padding: 0;
+}
+
+.spdf-page-action-btn:hover {
+  background: rgba(220, 38, 38, 0.08);
+  color: #dc2626;
+}
+
+.spdf-page-add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 120px;
+  border-style: dashed;
+  border-color: var(--line-strong);
+  background: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  transition: var(--transition-base);
+  color: var(--text-soft);
+}
+
+.spdf-page-add:hover,
+.spdf-page-add:active {
+  border-color: var(--brand);
+  background: var(--brand-faint);
+  color: var(--brand);
+}
+
+.spdf-preview-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.spdf-preview-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(15, 118, 110, 0.2);
+  background: var(--brand-faint);
+}
+
+.spdf-pdf-frame-wrap {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.spdf-pdf-frame {
+  width: 100%;
+  height: 400px;
+  border: none;
+  display: block;
+  background: #fff;
+}
+
+.spdf-preview-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+@media (min-width: 640px) {
+  .spdf-pages-grid {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  }
+
+  .spdf-capture-btn:hover {
+    border-color: var(--brand);
+    background: var(--brand-faint);
+  }
+
+  .spdf-pdf-frame {
+    height: 500px;
+  }
+}
+
 /* Review */
 .review-meta {
   margin-bottom: 16px;

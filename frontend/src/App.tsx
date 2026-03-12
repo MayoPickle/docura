@@ -11,6 +11,7 @@ import DocumentDetailPage from "./pages/DocumentDetailPage";
 import DocumentFormPage from "./pages/DocumentFormPage";
 import SmartScanPage from "./pages/SmartScanPage";
 import BatchScanPage from "./pages/BatchScanPage";
+import ScanPdfPage from "./pages/ScanPdfPage";
 import DocumentTypesPage from "./pages/DocumentTypesPage";
 
 export default function App() {
@@ -82,6 +83,7 @@ export default function App() {
                 />
                 <Route path="/scan" element={<SmartScanPage />} />
                 <Route path="/scan/batch" element={<BatchScanPage />} />
+                <Route path="/scan/pdf" element={<ScanPdfPage />} />
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

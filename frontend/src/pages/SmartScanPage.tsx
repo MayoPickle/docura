@@ -12,6 +12,7 @@ import {
   CheckOutlined,
   BulbOutlined,
   ThunderboltOutlined,
+  FilePdfOutlined as FilePdfLinkOutlined,
 } from "@ant-design/icons";
 import api from "../api/client";
 import type { ScanResult } from "../types";
@@ -463,6 +464,16 @@ export default function SmartScanPage() {
               <li>Multi-page docs? Upload all pages together</li>
             </ul>
           </div>
+
+          <button className="scan-batch-link" onClick={() => navigate("/scan/pdf")}>
+            <FilePdfLinkOutlined />
+            <div>
+              <Text strong style={{ fontSize: 13 }}>Scan to PDF</Text>
+              <Text type="secondary" style={{ display: "block", fontSize: 12 }}>
+                Multi-page scan with text enhancement & Smart Scan
+              </Text>
+            </div>
+          </button>
 
           <button className="scan-batch-link" onClick={() => navigate("/scan/batch")}>
             <ThunderboltOutlined />

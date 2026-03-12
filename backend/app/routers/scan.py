@@ -1,7 +1,9 @@
 import os
 import uuid
 import hashlib
+import base64
 from fastapi import APIRouter, Depends, UploadFile, HTTPException, status, File, Form, Query
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -10,6 +12,7 @@ from ..models import User, Document, File as DocumentFile
 from ..schemas import FileResponse, ScanResult, ScanDuplicateCheckResponse, ScanDuplicateItem
 from ..deps import get_current_user
 from ..services.ocr_service import recognize_documents
+from ..services.image_enhance import enhance_document_image, create_pdf_from_images
 from ..services.file_crypto import encrypt_for_storage, plaintext_sha256_file, FileCryptoError
 
 router = APIRouter()
@@ -249,3 +252,125 @@ async def scan_document(
 
     result = await recognize_documents(scan_files, doc_type_hint=doc_type_hint)
     return result
+
+
+@router.post("/enhance-pdf")
+async def enhance_and_create_pdf(
+    files: list[UploadFile] = File(...),
+    current_user: User = Depends(get_current_user),
+):
+    """Accept image files, apply document-oriented enhancement, and return a PDF.
+
+    The response is JSON with the PDF encoded as base64 so the frontend can
+    preview it before deciding to run Smart Scan.
+    """
+    if not files:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="At least one image file is required",
+        )
+
+    if len(files) > 30:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Maximum 30 pages are supported",
+        )
+
+    enhanced_images = []
+    for uploaded in files:
+        ctype = (uploaded.content_type or "").lower()
+        if not ctype.startswith("image/"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Only image files are supported, got {ctype}",
+            )
+
+        raw_bytes = await uploaded.read()
+        if not raw_bytes:
+            continue
+
+        try:
+            enhanced_images.append(enhance_document_image(raw_bytes))
+        except Exception as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Failed to process image {uploaded.filename}: {exc}",
+            ) from exc
+
+    if not enhanced_images:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No valid images to process",
+        )
+
+    pdf_bytes = create_pdf_from_images(enhanced_images)
+    pdf_b64 = base64.b64encode(pdf_bytes).decode("ascii")
+
+    return {"pages": len(enhanced_images), "pdf_base64": pdf_b64}
+
+
+@router.post("/scan-pdf")
+async def scan_pdf_document(
+    files: list[UploadFile] = File(...),
+    doc_type_hint: str | None = Form(default=None),
+    current_user: User = Depends(get_current_user),
+):
+    """Enhance images, create a PDF, and run Smart Scan in one step.
+
+    Returns both the generated PDF (base64) and the scan result.
+    """
+    if not files:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="At least one image file is required",
+        )
+
+    if len(files) > 30:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Maximum 30 pages are supported",
+        )
+
+    enhanced_images = []
+    original_bytes_list: list[tuple[bytes, str, str | None]] = []
+
+    for uploaded in files:
+        ctype = (uploaded.content_type or "").lower()
+        if not ctype.startswith("image/"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Only image files are supported, got {ctype}",
+            )
+
+        raw_bytes = await uploaded.read()
+        if not raw_bytes:
+            continue
+
+        original_bytes_list.append((raw_bytes, ctype, uploaded.filename))
+
+        try:
+            enhanced_images.append(enhance_document_image(raw_bytes))
+        except Exception as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Failed to process image {uploaded.filename}: {exc}",
+            ) from exc
+
+    if not enhanced_images:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No valid images to process",
+        )
+
+    pdf_bytes = create_pdf_from_images(enhanced_images)
+    pdf_b64 = base64.b64encode(pdf_bytes).decode("ascii")
+
+    scan_result = await recognize_documents(
+        original_bytes_list, doc_type_hint=doc_type_hint
+    )
+
+    return {
+        "pages": len(enhanced_images),
+        "pdf_base64": pdf_b64,
+        "scan_result": scan_result.model_dump(),
+    }
