@@ -12,7 +12,7 @@ from ..models import User, Document, File as DocumentFile
 from ..schemas import FileResponse, ScanResult, ScanDuplicateCheckResponse, ScanDuplicateItem
 from ..deps import get_current_user
 from ..services.ocr_service import recognize_documents
-from ..services.image_enhance import enhance_document_image, create_pdf_from_images
+from ..services.image_enhance import enhance_document_image, prepare_image_for_pdf, create_pdf_from_images
 from ..services.file_crypto import encrypt_for_storage, plaintext_sha256_file, FileCryptoError
 
 router = APIRouter()
@@ -254,15 +254,34 @@ async def scan_document(
     return result
 
 
+MAX_PDF_PAGES = 200
+
+
+def _process_image(raw_bytes: bytes, enhance: bool, filename: str | None) -> "Image":
+    """Return either an enhanced or plain-normalised PIL image."""
+    from PIL.Image import Image  # type: ignore[attr-defined]
+
+    try:
+        if enhance:
+            return enhance_document_image(raw_bytes)
+        return prepare_image_for_pdf(raw_bytes)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Failed to process image {filename}: {exc}",
+        ) from exc
+
+
 @router.post("/enhance-pdf")
 async def enhance_and_create_pdf(
     files: list[UploadFile] = File(...),
+    enhance: bool = Form(default=True),
     current_user: User = Depends(get_current_user),
 ):
-    """Accept image files, apply document-oriented enhancement, and return a PDF.
+    """Accept image files, optionally enhance them, and return a PDF.
 
-    The response is JSON with the PDF encoded as base64 so the frontend can
-    preview it before deciding to run Smart Scan.
+    Set ``enhance=false`` to skip contrast / sharpness processing and
+    only perform EXIF normalisation + PDF assembly.
     """
     if not files:
         raise HTTPException(
@@ -270,13 +289,13 @@ async def enhance_and_create_pdf(
             detail="At least one image file is required",
         )
 
-    if len(files) > 30:
+    if len(files) > MAX_PDF_PAGES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Maximum 30 pages are supported",
+            detail=f"Maximum {MAX_PDF_PAGES} pages are supported",
         )
 
-    enhanced_images = []
+    images = []
     for uploaded in files:
         ctype = (uploaded.content_type or "").lower()
         if not ctype.startswith("image/"):
@@ -289,33 +308,28 @@ async def enhance_and_create_pdf(
         if not raw_bytes:
             continue
 
-        try:
-            enhanced_images.append(enhance_document_image(raw_bytes))
-        except Exception as exc:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=f"Failed to process image {uploaded.filename}: {exc}",
-            ) from exc
+        images.append(_process_image(raw_bytes, enhance, uploaded.filename))
 
-    if not enhanced_images:
+    if not images:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No valid images to process",
         )
 
-    pdf_bytes = create_pdf_from_images(enhanced_images)
+    pdf_bytes = create_pdf_from_images(images)
     pdf_b64 = base64.b64encode(pdf_bytes).decode("ascii")
 
-    return {"pages": len(enhanced_images), "pdf_base64": pdf_b64}
+    return {"pages": len(images), "enhanced": enhance, "pdf_base64": pdf_b64}
 
 
 @router.post("/scan-pdf")
 async def scan_pdf_document(
     files: list[UploadFile] = File(...),
+    enhance: bool = Form(default=True),
     doc_type_hint: str | None = Form(default=None),
     current_user: User = Depends(get_current_user),
 ):
-    """Enhance images, create a PDF, and run Smart Scan in one step.
+    """Create a PDF from images (with optional enhancement) and Smart Scan it.
 
     Returns both the generated PDF (base64) and the scan result.
     """
@@ -325,13 +339,13 @@ async def scan_pdf_document(
             detail="At least one image file is required",
         )
 
-    if len(files) > 30:
+    if len(files) > MAX_PDF_PAGES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Maximum 30 pages are supported",
+            detail=f"Maximum {MAX_PDF_PAGES} pages are supported",
         )
 
-    enhanced_images = []
+    images = []
     original_bytes_list: list[tuple[bytes, str, str | None]] = []
 
     for uploaded in files:
@@ -347,22 +361,15 @@ async def scan_pdf_document(
             continue
 
         original_bytes_list.append((raw_bytes, ctype, uploaded.filename))
+        images.append(_process_image(raw_bytes, enhance, uploaded.filename))
 
-        try:
-            enhanced_images.append(enhance_document_image(raw_bytes))
-        except Exception as exc:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=f"Failed to process image {uploaded.filename}: {exc}",
-            ) from exc
-
-    if not enhanced_images:
+    if not images:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No valid images to process",
         )
 
-    pdf_bytes = create_pdf_from_images(enhanced_images)
+    pdf_bytes = create_pdf_from_images(images)
     pdf_b64 = base64.b64encode(pdf_bytes).decode("ascii")
 
     scan_result = await recognize_documents(
@@ -370,7 +377,8 @@ async def scan_pdf_document(
     )
 
     return {
-        "pages": len(enhanced_images),
+        "pages": len(images),
+        "enhanced": enhance,
         "pdf_base64": pdf_b64,
         "scan_result": scan_result.model_dump(),
     }

@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Typography, Button, App, Modal } from "antd";
+import { Typography, Button, App, Modal, Switch } from "antd";
 import {
   CameraOutlined,
   ArrowLeftOutlined,
@@ -18,7 +18,7 @@ import ScanResultReview from "../components/ScanResultReview";
 
 const { Title, Text } = Typography;
 
-const MAX_PAGES = 30;
+const MAX_PAGES = 200;
 
 const STEPS = [
   { num: 1, label: "Pages" },
@@ -32,6 +32,13 @@ const ENHANCE_MESSAGES = [
   "Boosting contrast…",
   "Sharpening text…",
   "Building PDF…",
+];
+
+const BUILD_MESSAGES = [
+  "Processing images…",
+  "Normalizing pages…",
+  "Assembling PDF…",
+  "Almost done…",
 ];
 
 const SCAN_MESSAGES = [
@@ -64,6 +71,7 @@ export default function ScanPdfPage() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [activePreview, setActivePreview] = useState<string | null>(null);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [enhance, setEnhance] = useState(true);
 
   const currentStep = scanResult
     ? 4
@@ -152,6 +160,7 @@ export default function ScanPdfPage() {
     try {
       const fd = new FormData();
       pages.forEach((f) => fd.append("files", f));
+      fd.append("enhance", String(enhance));
 
       const res = await api.post("/documents/enhance-pdf", fd, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -248,7 +257,9 @@ export default function ScanPdfPage() {
     setScanResult(null);
   };
 
-  const messages = enhancing ? ENHANCE_MESSAGES : SCAN_MESSAGES;
+  const messages = enhancing
+    ? (enhance ? ENHANCE_MESSAGES : BUILD_MESSAGES)
+    : SCAN_MESSAGES;
 
   return (
     <div className="page-shell page-shell-narrow">
@@ -425,18 +436,35 @@ export default function ScanPdfPage() {
             </div>
           )}
 
-          {/* Create PDF button */}
+          {/* Enhance toggle + Create PDF button */}
           {pages.length > 0 && (
-            <Button
-              type="primary"
-              icon={<FilePdfOutlined />}
-              onClick={handleEnhanceAndCreatePdf}
-              block
-              size="large"
-              className="scan-go-btn"
-            >
-              Enhance & Create PDF
-            </Button>
+            <>
+              <div className="spdf-enhance-toggle">
+                <div className="spdf-enhance-info">
+                  <Text strong style={{ fontSize: 13 }}>
+                    Text Enhancement
+                  </Text>
+                  <Text type="secondary" style={{ fontSize: 12, display: "block" }}>
+                    Boost contrast & sharpen text for clearer scans
+                  </Text>
+                </div>
+                <Switch
+                  checked={enhance}
+                  onChange={setEnhance}
+                  style={{ flexShrink: 0 }}
+                />
+              </div>
+              <Button
+                type="primary"
+                icon={<FilePdfOutlined />}
+                onClick={handleEnhanceAndCreatePdf}
+                block
+                size="large"
+                className="scan-go-btn"
+              >
+                {enhance ? "Enhance & Create PDF" : "Create PDF"}
+              </Button>
+            </>
           )}
         </>
       )}
@@ -451,7 +479,8 @@ export default function ScanPdfPage() {
             {messages[msgIdx]}
           </Text>
           <Text type="secondary" style={{ fontSize: 13 }}>
-            Enhancing {pages.length} page{pages.length !== 1 ? "s" : ""}…
+            {enhance ? "Enhancing" : "Processing"} {pages.length} page
+            {pages.length !== 1 ? "s" : ""}…
           </Text>
         </div>
       )}
@@ -463,14 +492,14 @@ export default function ScanPdfPage() {
             <FilePdfOutlined style={{ fontSize: 20, color: "var(--brand)" }} />
             <div>
               <Text strong style={{ fontSize: 14 }}>
-                Enhanced PDF Ready
+                PDF Ready
               </Text>
               <Text
                 type="secondary"
                 style={{ display: "block", fontSize: 12 }}
               >
-                {pdfPageCount} page{pdfPageCount !== 1 ? "s" : ""} · Text
-                enhanced
+                {pdfPageCount} page{pdfPageCount !== 1 ? "s" : ""}
+                {enhance ? " · Text enhanced" : ""}
               </Text>
             </div>
           </div>

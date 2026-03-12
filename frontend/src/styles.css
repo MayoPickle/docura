@@ -1792,6 +1792,21 @@ a {
   color: var(--brand);
 }
 
+.spdf-enhance-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.spdf-enhance-info {
+  min-width: 0;
+}
+
 .spdf-preview-section {
   display: flex;
   flex-direction: column;
