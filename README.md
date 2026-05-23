@@ -212,3 +212,32 @@ Notes:
 
 - Keep old keys in `FILE_ENCRYPTION_KEYS` until old files are re-encrypted, otherwise old files cannot be decrypted.
 - If encryption is enabled but keys are missing/invalid, backend startup fails fast.
+
+### Encrypt Existing Plaintext Uploads
+
+When file encryption is enabled, new uploads are encrypted automatically. Existing plaintext files remain readable for backward compatibility, but they are not rewritten automatically.
+
+After configuring `FILE_ENCRYPTION_ENABLED=true` and a valid key, run a dry-run first:
+
+```bash
+docker compose run --rm backend \
+  python scripts/encrypt_existing_uploads.py
+```
+
+Encrypt plaintext uploads in place:
+
+```bash
+docker compose run --rm \
+  -v "$PWD/plaintext-upload-backups:/backup" \
+  backend \
+  python scripts/encrypt_existing_uploads.py \
+    --write \
+    --backup-dir /backup
+```
+
+Notes:
+
+- Run this during a maintenance window so files are not being uploaded while the script is rewriting them.
+- The script skips files already encrypted with Docura's file format.
+- Keep the backup directory until you have verified downloads work.
+- Keep old encryption keys forever, or at least until every file using those keys has been rotated.
