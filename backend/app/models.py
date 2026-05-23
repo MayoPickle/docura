@@ -5,6 +5,10 @@ from datetime import datetime, timezone
 from .database import Base
 
 
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -12,7 +16,7 @@ class User(Base):
     name = Column(String(100), nullable=False)
     email = Column(String(255), unique=True, nullable=False, index=True)
     hashed_password = Column(String(255), nullable=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=utc_now)
 
     documents = relationship("Document", back_populates="owner", cascade="all, delete-orphan")
     doc_type_preferences = relationship(
@@ -31,8 +35,8 @@ class Document(Base):
     doc_type = Column(String(50), nullable=False, index=True)
     fields_json = Column(Text, default="{}")
     notes = Column(Text, default="")
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
 
     owner = relationship("User", back_populates="documents")
     files = relationship("File", back_populates="document", cascade="all, delete-orphan")
@@ -46,7 +50,7 @@ class File(Base):
     filename = Column(String(255), nullable=False)
     filepath = Column(String(500), nullable=False)
     content_type = Column(String(100), default="application/octet-stream")
-    uploaded_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    uploaded_at = Column(DateTime, default=utc_now)
 
     document = relationship("Document", back_populates="files")
 
@@ -63,6 +67,6 @@ class DocumentTypePreference(Base):
     icon_key = Column(String(50), nullable=False)
     icon_bg = Column(String(16), nullable=True)
     icon_fg = Column(String(16), nullable=True)
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
 
     owner = relationship("User", back_populates="doc_type_preferences")
