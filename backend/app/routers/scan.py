@@ -17,7 +17,8 @@ from ..services.file_crypto import encrypt_for_storage, plaintext_sha256_file, F
 
 router = APIRouter()
 
-UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
+DEFAULT_UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
+UPLOAD_DIR = os.getenv("UPLOAD_DIR", DEFAULT_UPLOAD_DIR)
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 SUPPORTED_SCAN_MIME_TYPES = {

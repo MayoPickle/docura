@@ -6,7 +6,7 @@ A mobile-first personal document management web app. Store and organize your cre
 
 - **Frontend**: React 18 + TypeScript + Ant Design 5 + Vite
 - **Backend**: Python + FastAPI + SQLAlchemy (async)
-- **Database**: SQLite (via aiosqlite)
+- **Database**: SQLite for local development, PostgreSQL for Docker/production
 - **AI/OCR**: OpenAI Responses API (`gpt-5.2` default) / PaddleOCR (fallback)
 
 ## Features
@@ -64,6 +64,89 @@ The frontend runs on http://localhost:3000 and proxies API requests to the backe
 | `FILE_ENCRYPTION_ACTIVE_KEY_ID` | first configured key / `default` | Active key id for new file encryption |
 | `FILE_ENCRYPTION_KEY` | (none) | Single base64/base64url AES key (16/24/32 bytes decoded) |
 | `FILE_ENCRYPTION_KEYS` | (none) | Key ring for rotation: `key_id:base64key,key_id2:base64key2` |
+| `UPLOAD_DIR` | `backend/uploads` | Directory where attachment files are stored |
+
+## Docker Deployment
+
+Docker deployment is included for production-like environments:
+
+- Frontend: Vite build served by Nginx
+- Backend: FastAPI/Uvicorn
+- Database: PostgreSQL 16
+- Uploads: bind-mounted at `./backend/uploads` for backups and migration
+
+Create your production environment file:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` and set at least:
+
+- `POSTGRES_PASSWORD`
+- `SECRET_KEY`
+- `OPENAI_API_KEY` if Smart Scan should use OpenAI
+- `FILE_ENCRYPTION_*` values if attachment encryption is enabled
+
+Start the stack:
+
+```bash
+docker compose up -d --build
+```
+
+The app is served on http://localhost:3000 by default. The backend is also exposed on http://localhost:8000 for health checks and direct API access.
+
+For production, PostgreSQL is recommended over SQLite. SQLite is still convenient for local development, but PostgreSQL is a better fit for multiple users, containerized deployment, backups, and operational tooling.
+
+### GitHub Actions Build
+
+The repository includes `.github/workflows/docker-build.yml`:
+
+- Pull requests to `main` or `master` validate `docker compose config` and build both Docker images.
+- Pushes to `main` or `master`, version tags like `v1.0.0`, and manual dispatches build and publish images to GitHub Container Registry.
+- Published image names are `ghcr.io/<owner>/<repo>-backend` and `ghcr.io/<owner>/<repo>-frontend`.
+
+The workflow uses the built-in `GITHUB_TOKEN`; make sure the repository has Actions enabled and package write permissions available.
+
+## Migrating Existing SQLite Data to PostgreSQL
+
+The legacy local database is usually `backend/docura.db`, and uploaded files live in `backend/uploads`.
+
+Before migration, make a backup:
+
+```bash
+cp backend/docura.db backend/docura.db.backup
+tar -czf backend-uploads.backup.tgz backend/uploads
+```
+
+Start only PostgreSQL, then run the migration through the backend image:
+
+```bash
+docker compose up -d db
+docker compose build backend
+docker compose run --rm \
+  -v "$PWD/backend/docura.db:/migration/docura.db:ro" \
+  -v "$PWD/backend/uploads:/migration/uploads:ro" \
+  backend \
+  python scripts/migrate_sqlite_to_postgres.py \
+    --sqlite-path /migration/docura.db \
+    --source-uploads /migration/uploads \
+    --target-uploads /app/uploads \
+    --stored-upload-dir /app/uploads
+```
+
+Then start the full app:
+
+```bash
+docker compose up -d
+```
+
+Notes:
+
+- The migration preserves primary keys so existing document and file references remain stable.
+- The script refuses to import into a non-empty PostgreSQL database by default. Use `--replace` only if you intentionally want to overwrite existing PostgreSQL rows.
+- File records are rewritten to point at `/app/uploads/<file>`, matching the Docker backend container.
+- If file encryption was enabled before migration, keep the same `FILE_ENCRYPTION_KEY` or `FILE_ENCRYPTION_KEYS`; otherwise existing encrypted uploads cannot be decrypted.
 
 ## API Endpoints
 
